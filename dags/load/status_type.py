@@ -1,6 +1,8 @@
 from utils.utils import bulk_load
 import time
 
+file_path = 'data/Batch1/StatusType.txt'
+
 
 def load(conn):
     cur = conn.cursor()
@@ -15,4 +17,4 @@ def load(conn):
     
     time.sleep(3)  # TODO only for testing - remove this in the future
     
-    bulk_load(conn, 'StatusType', 'data/Batch1/StatusType.txt', '|')
+    bulk_load(conn, 'StatusType', file_path, '|')

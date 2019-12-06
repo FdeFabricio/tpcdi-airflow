@@ -1,7 +1,7 @@
 import airflow
 from airflow.hooks.mysql_hook import MySqlHook
 from airflow.operators.python_operator import PythonOperator
-from load import status_type
+from load import status_type, date
 
 args = {
     'owner': 'airflow',
@@ -17,6 +17,13 @@ dag = airflow.DAG(
     default_args=args,
     max_active_runs=1)
 
+
+date = PythonOperator(
+    task_id='DimDate',
+    provide_context=False,
+    python_callable=date.load,
+    op_kwargs={'conn': conn},
+    dag=dag)
 
 status_type = PythonOperator(
     task_id='StatusType',

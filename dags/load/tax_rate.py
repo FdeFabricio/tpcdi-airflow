@@ -1,5 +1,4 @@
 from utils.utils import bulk_load
-import pandas as pd
 
 file_path = 'data/Batch1/TaxRate.txt'
 
@@ -13,7 +12,6 @@ def load(conn):
                                 TX_RATE numeric(6,5) Not NULL
         );
     """)
-    df = pd.read_csv(file_path, header=None, delimiter='|')    
 
     bulk_load(conn, 'TaxRate', file_path, '|')
 

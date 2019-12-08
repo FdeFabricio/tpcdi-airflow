@@ -33,7 +33,6 @@ def load(conn):
     df.drop(df.columns[5], axis=1, inplace=True)   
     sk = np.arange(1,len(df)+1)
     df.insert(0, 'SK_BrokerID', sk)
-    cur.execute("SELECT min(DateValue) FROM DimDate;")
     df_d=pd.read_csv(date_file_path, header=None, delimiter='|')
     min_date=df_d[1].min()
     df['IsCurrent']=1

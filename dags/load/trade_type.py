@@ -1,5 +1,4 @@
 from utils.utils import bulk_load
-import pandas as pd
 
 file_path = 'data/Batch1/TradeType.txt'
 
@@ -13,6 +12,5 @@ def load(conn):
                                     TT_IS_MRKT numeric(1) Not NULL
         );
     """)
-    df = pd.read_csv(file_path, header=None, delimiter='|')    
 
     bulk_load(conn, 'TradeType', file_path, '|')

@@ -5,3 +5,5 @@ airflow.db
 logs/
 unittests.cfg
 **/__pycache__/
+data/
+sql/

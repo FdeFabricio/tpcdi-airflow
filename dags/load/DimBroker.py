@@ -34,7 +34,8 @@ def load(conn):
     sk = np.arange(1,len(df)+1)
     df.insert(0, 'SK_BrokerID', sk)
     cur.execute("SELECT min(DateValue) FROM DimDate;")
-    min_date=cur.fetchall()[0][0]
+    df_d=pd.read_csv(date_file_path, header=None, delimiter='|')
+    min_date=df_d[1].min()
     df['IsCurrent']=1
     df['BatchId']=1
     df['EffectiveDate']=min_date

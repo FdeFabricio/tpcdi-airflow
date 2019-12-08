@@ -1,9 +1,7 @@
 from utils.utils import bulk_load
 import pandas as pd
-import os
 
 file_path = 'data/Batch1/TaxRate.txt'
-tmp_file_path = 'data/Batch1/TaxRate_tmp.txt'
 
 
 def load(conn):
@@ -16,9 +14,7 @@ def load(conn):
         );
     """)
     df = pd.read_csv(file_path, header=None, delimiter='|')    
-    df.to_csv(tmp_file_path, index=False, header=False, sep="|")
 
-    bulk_load(conn, 'TaxRate', tmp_file_path, '|')
-    
-    os.remove(tmp_file_path)
+    bulk_load(conn, 'TaxRate', file_path, '|')
+
     

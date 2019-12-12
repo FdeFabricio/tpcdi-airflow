@@ -144,7 +144,7 @@ def load(conn):
         for upda in upds:
             action_ts = upda["EffectiveDate"]
             old_index = df_customers[(df_customers.CustomerID == c_id) & df_customers.IsCurrent].index.values[0]
-            new_row = df_customers.loc[old_index, :]
+            new_row = df_customers.loc[old_index, :].copy()
             
             df_customers.loc[old_index, "IsCurrent"] = False
             df_customers.loc[old_index, "EndDate"] = action_ts

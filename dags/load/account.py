@@ -1,61 +1,19 @@
 import logging
-from lxml import etree as et
-import pandas as pd
+
 import numpy as np
-from utils.utils import data_folder_path, to_upper, get_engine
+import pandas as pd
+from lxml import etree as et
+
+from utils.utils import data_folder_path, get_engine
 
 customer_file_path = data_folder_path + "CustomerMgmt.xml"
-
 NULL = ""
 
 
 def load(conn):
     cur = conn.cursor()
     
-    logging.info("Creating table")
-    cur.execute("""
-        DROP TABLE IF EXISTS DimAccount;
-        CREATE TABLE DimAccount (
-            SK_AccountID INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT,
-            AccountID INTEGER NOT NULL,
-            SK_BrokerID INTEGER NOT NULL,
-            SK_CustomerID INTEGER NOT NULL,
-            Status CHAR(10) NOT NULL,
-            AccountDesc CHAR(50),
-            TaxStatus NUMERIC(1) NOT NULL CHECK (TaxStatus IN (0, 1, 2)),
-            IsCurrent BOOLEAN NOT NULL,
-            BatchID NUMERIC(5) NOT NULL,
-            EffectiveDate DATE NOT NULL,
-            EndDate DATE NOT NULL
-        );
-        
-        DROP TRIGGER IF EXISTS tpcdi.ADD_DimAccount_SK_CustomerID;
-        DROP TRIGGER IF EXISTS tpcdi.ADD_DimAccount_SK_BrokerID;
-        delimiter |
-        CREATE TRIGGER `ADD_DimAccount_SK_CustomerID` BEFORE INSERT ON `DimAccount`
-        FOR EACH ROW
-        BEGIN
-            SET NEW.SK_CustomerID = (
-                SELECT DimCustomer.SK_CustomerID, DimCustomer.Status
-                FROM DimCustomer
-                WHERE DimCustomer.CustomerID = NEW.SK_CustomerID AND NEW.EndDate <= DimCustomer.EndDate
-                LIMIT 1
-            );
-        END;
-        |
-        CREATE TRIGGER `ADD_DimAccount_SK_BrokerID` BEFORE INSERT ON `DimAccount`
-        FOR EACH ROW
-        BEGIN
-            SET NEW.SK_BrokerID = (
-                SELECT DimBroker.SK_BrokerID
-                FROM DimBroker
-                WHERE DimBroker.BrokerID = NEW.SK_BrokerID
-            );
-        END;
-        |
-        delimiter ;
-    """)
-    
+    # needs to execute setup.sql first
     df_accounts = pd.DataFrame(
         columns=["AccountID", "Status", "AccountDesc", "TaxStatus", "IsCurrent", "BatchID", "EffectiveDate", "EndDate"])
     
@@ -149,10 +107,10 @@ def load(conn):
     logging.info("Inserting into MySQL")
     df_accounts.to_sql("DimAccount", index=False, if_exists="append", con=get_engine())
     
-    cur.execute("""
-        DROP TRIGGER tpcdi.ADD_DimAccount_SK_CustomerID;
-        DROP TRIGGER tpcdi.ADD_DimAccount_SK_BrokerID;
-    """)
+    cur.execute("DROP TRIGGER tpcdi.ADD_DimAccount_SK_CustomerID;")
+    cur.execute("DROP TRIGGER tpcdi.ADD_DimAccount_SK_BrokerID;")
+    
+    conn.commit()
 
 
 def get_2l_data(customer, first, second):

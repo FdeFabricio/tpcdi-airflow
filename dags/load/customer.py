@@ -3,6 +3,7 @@ from lxml import etree as et
 import pandas as pd
 import numpy as np
 from utils.utils import data_folder_path, to_upper, get_engine
+from load.prospect import get_marketing_nameplate
 
 customer_file_path = data_folder_path + "CustomerMgmt.xml"
 tax_rate_file_path = data_folder_path + "TaxRate.txt"
@@ -104,8 +105,10 @@ def load(conn):
                 "Email2": get_2l_data(customer, "ContactInfo", "C_ALT_EMAIL"),
             }
             
-            if row["Gender"] not in [None, "F", "M", ""]:
-                row["Gender"] = "U"
+            if row["Gender"] is not None and row["Gender"] != NULL:
+                row["Gender"] = row["Gender"].upper()
+                if row["Gender"] not in ["F", "M"]:
+                    row["Gender"] = "U"
             
             nat_tax_id = get_2l_data(customer, "TaxInfo", "C_NAT_TX_ID")
             if nat_tax_id:
@@ -264,35 +267,3 @@ def get_prospect(c, df_prospect):
         return [row["AgencyID"], row["CreditRating"], row["NetWorth"], get_marketing_nameplate(row)]
     else:
         return [np.nan, np.nan, np.nan, np.nan]
-
-
-def get_marketing_nameplate(row):
-    net_worth = row["NetWorth"]
-    income = row["Income"]
-    num_children = row["NumberChildren"]
-    num_credit_cards = row["NumberCreditCards"]
-    age = row["Age"]
-    credit_rating = row["CreditRating"]
-    num_cars = row["NumberCars"]
-    
-    result = []
-    
-    if net_worth and net_worth > 1000000 or income and income > 200000:
-        result.append('HighValue')
-    
-    if num_children and num_children > 3 or num_credit_cards and num_credit_cards > 5:
-        result.append('Expenses')
-    
-    if age and age > 45:
-        result.append('Boomer')
-    
-    if income and income < 50000 or credit_rating and credit_rating < 600 or net_worth and net_worth < 100000:
-        result.append('MoneyAlert')
-    
-    if num_cars and num_cars > 3 or num_credit_cards and num_credit_cards > 7:
-        result.append('Spender')
-    
-    if age and age < 25 and net_worth and net_worth > 1000000:
-        result.append('Inherited')
-    
-    return '+'.join(result)

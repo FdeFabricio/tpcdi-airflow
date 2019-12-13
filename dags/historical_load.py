@@ -1,7 +1,7 @@
 import airflow
 from airflow.hooks.mysql_hook import MySqlHook
 from airflow.operators.python_operator import PythonOperator
-from load import account, status_type, dim_date, customer, company, dim_broker
+from load import account, status_type, dim_date as date, customer, company, dim_broker, prospect
 
 args = {
     'owner': 'airflow',
@@ -15,13 +15,13 @@ dag = airflow.DAG(
     'historical_load',
     schedule_interval="@once",
     default_args=args,
+    template_searchpath="./sql/",
     max_active_runs=1)
 
-
-date = PythonOperator(
+dim_date = PythonOperator(
     task_id='DimDate',
     provide_context=False,
-    python_callable=dim_date.load,
+    python_callable=date.load,
     op_kwargs={'conn': conn},
     dag=dag)
 
@@ -60,5 +60,14 @@ dim_account = PythonOperator(
     op_kwargs={'conn': conn},
     dag=dag)
 
+prospect = PythonOperator(
+    task_id='Prospect',
+    provide_context=False,
+    python_callable=prospect.load,
+    op_kwargs={'conn': conn, 'ds': "{{ ds }}"},
+    dag=dag)
+
 dim_broker >> dim_account
 dim_customer >> dim_account
+dim_customer >> prospect
+dim_date >> prospect

@@ -1,18 +1,16 @@
 import pandas as pd
 import numpy as np
-import os
-from utils.utils import bulk_load, data_folder_path
+from utils.utils import df_bulk_load, data_folder_path
 
 file_path = data_folder_path + 'HR.csv'
 date_file_path = data_folder_path + 'Date.txt'
-tmp_file_path = data_folder_path + 'DimBroker_tmp.txt'
 
 
 def load(conn):
     cur = conn.cursor()
     
     cur.execute("""
-      DROP TABLE IF EXISTS DimBroker;
+        DROP TABLE IF EXISTS DimBroker;
         CREATE TABLE DimBroker  (
             SK_BrokerID INTEGER NOT NULL PRIMARY KEY,
             BrokerID INTEGER NOT NULL,
@@ -42,8 +40,4 @@ def load(conn):
     df['EffectiveDate'] = min_date
     df['EndDate'] = '9999-12-31'
     
-    df.to_csv(tmp_file_path, index=False, header=False, sep="|")
-    
-    bulk_load(conn, 'DimBroker', tmp_file_path, '|')
-    
-    os.remove(tmp_file_path)
+    df_bulk_load(conn, df, 'DimBroker')

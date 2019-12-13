@@ -1,3 +1,5 @@
+import os
+import uuid
 import numpy as np
 from sqlalchemy import create_engine
 
@@ -10,8 +12,16 @@ def bulk_load(conn, table, file, delimiter):
         LOAD DATA LOCAL INFILE '{file}'
         INTO TABLE {table}
         FIELDS TERMINATED BY '{delimiter}'
-        """.format(file=file, table=table, delimiter=delimiter))
+    """.format(file=file, table=table, delimiter=delimiter))
     conn.commit()
+
+
+def df_bulk_load(conn, _df, table):
+    tmp_file_path = data_folder_path + "tmp_" + str(uuid.uuid4())
+    df = _df.fillna('\\N')
+    df.to_csv(tmp_file_path, index=False, header=False, sep='|')
+    bulk_load(conn, table, tmp_file_path, '|')
+    os.remove(tmp_file_path)
 
 
 def to_upper(value):

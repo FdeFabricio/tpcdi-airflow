@@ -13,6 +13,25 @@ CREATE TABLE DimAccount (
     EndDate DATE NOT NULL
 );
 
+DROP TABLE IF EXISTS DimSecurity;
+CREATE TABLE DimSecurity(
+    SK_SecurityID INTEGER NOT NULL PRIMARY KEY,
+    Symbol CHAR(15) NOT NULL,
+    Issue CHAR(6) NOT NULL,
+    Status CHAR(10) NOT NULL,
+    Name CHAR(70) NOT NULL,
+    ExchangeID CHAR(6) NOT NULL,
+    SK_CompanyID INTEGER NOT NULL,
+    SharesOutstanding INTEGER NOT NULL,
+    FirstTrade DATE NOT NULL,
+    FirstTradeOnExchange DATE NOT NULL,
+    Dividend INTEGER NOT NULL,
+    IsCurrent BOOLEAN NOT NULL,
+    BatchID NUMERIC(5) NOT NULL,
+    EffectiveDate DATE NOT NULL,
+    EndDate DATE NOT NULL
+);
+
 DROP TABLE IF EXISTS Prospect;
 CREATE TABLE Prospect(
     AgencyID CHAR(30) NOT NULL,
@@ -47,9 +66,34 @@ CREATE TABLE Prospect(
     ProspectKey CHAR(232)
 );
 
+DROP TABLE IF EXISTS FactMarketHistory;
+CREATE TABLE FactMarketHistory(
+    SK_SecurityID INTEGER NOT NULL,
+    SK_CompanyID INTEGER NOT NULL REFERENCES DimCompany (SK_CompanyID),
+    SK_DateID INTEGER NOT NULL REFERENCES DimDate (SK_DateID),
+    PERatio NUMERIC(10,2),
+    Yield NUMERIC(5,2) NOT NULL,
+    FiftyTwoWeekHigh NUMERIC(8,2) NOT NULL,
+    SK_FiftyTwoWeekHighDate INTEGER NOT NULL,
+    FiftyTwoWeekLow NUMERIC(8,2) NOT NULL,
+    SK_FiftyTwoWeekLowDate INTEGER NOT NULL,
+    ClosePrice NUMERIC(8,2) NOT NULL,
+    DayHigh NUMERIC(8,2) NOT NULL,
+    DayLow NUMERIC(8,2) NOT NULL,
+    Volume NUMERIC(12) NOT NULL,
+    BatchID NUMERIC(5),
+    Date DATE NOT NULL,
+    Symbol CHAR(15) NOT NULL,
+    FiftyTwoWeekLowDate DATE NOT NULL,
+    FiftyTwoWeekHighDate DATE NOT NULL,
+);
+
+
+
 DROP TRIGGER IF EXISTS tpcdi.ADD_DimAccount_SK_CustomerID;
 DROP TRIGGER IF EXISTS tpcdi.ADD_DimAccount_SK_BrokerID;
 DROP TRIGGER IF EXISTS tpcdi.ADD_Prospect_DateID;
+DROP TRIGGER IF EXISTS tpcdi.ADD_FactMarketHistory;
 
 delimiter $$
 
@@ -96,5 +140,44 @@ BEGIN
 END;
 
 $$
+
+CREATE TRIGGER `ADD_FactMarketHistory` BEFORE INSERT ON `FactMarketHistory`
+FOR EACH ROW
+BEGIN
+    DECLARE _sec_id, _cmp_id INT;
+
+    SELECT DimSecurity.SK_SecurityID, DimSecurity.SK_CompanyID
+    INTO @_sec_id, @_cmp_id
+    FROM DimSecurity
+    WHERE DimSecurity.Symbol = NEW.Symbol AND
+          DimSecurity.EffectiveDate <= NEW.Date AND
+          DimSecurity.EndDate > NEW.Date;
+
+    SET NEW.SK_SecurityID = @_sec_id;
+    SET NEW.SK_CompanyID = @_cmp_id;
+
+    SET NEW.SK_DateID = (
+        SELECT DimDate.SK_DateID
+        FROM DimDate
+        WHERE DimDate.DateValue = NEW.Date
+    );
+
+    SET NEW.SK_FiftyTwoWeekHighDate = (
+        SELECT DimDate.SK_DateID
+        FROM DimDate
+        WHERE DimDate.DateValue = NEW.FiftyTwoWeekHighDate
+    );
+
+    SET NEW.SK_FiftyTwoWeekLowDate = (
+        SELECT DimDate.SK_DateID
+        FROM DimDate
+        WHERE DimDate.DateValue = NEW.FiftyTwoWeekLowDate
+    );
+
+
+
+
+
+END;
 
 delimiter ;

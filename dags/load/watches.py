@@ -39,7 +39,6 @@ def load(conn):
     df_fact_watches.drop("W_ACTION", inplace=True, axis=1)
     
     logging.info("Inserting into MySQL")
-    df_fact_watches.to_csv(data_folder_path+"watches.csv", index=False)
     df_fact_watches.to_sql("FactWatches", index=False, if_exists="append", con=get_engine())
     
     logging.info("Dropping auxiliary columns")

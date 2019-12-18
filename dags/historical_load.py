@@ -2,7 +2,7 @@ import airflow
 from airflow.hooks.mysql_hook import MySqlHook
 from airflow.operators.python_operator import PythonOperator
 
-from load import account, status_type, date, customer, company, dim_broker, security, prospect, time, watches
+from load import account, status_type, date, customer, company, dim_broker, holdings, security, prospect, time, watches
 
 args = {
     'owner': 'airflow',
@@ -80,6 +80,13 @@ fact_watches = PythonOperator(
     op_kwargs={'conn': conn},
     dag=dag)
 
+fact_holdings = PythonOperator(
+    task_id='FactHoldings',
+    provide_context=False,
+    python_callable=holdings.load,
+    op_kwargs={'conn': conn},
+    dag=dag)
+
 prospect = PythonOperator(
     task_id='Prospect',
     provide_context=False,
@@ -92,3 +99,4 @@ dim_customer >> dim_account
 dim_customer >> prospect
 dim_date >> prospect
 dim_company >> dim_security
+# fact_holdings << dim_trade

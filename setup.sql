@@ -145,11 +145,27 @@ CREATE TABLE FactWatches (
     DateRemoved DATE
 );
 
+DROP TABLE IF EXISTS FactHoldings;
+CREATE TABLE FactHoldings (
+    TradeID NUMERIC(11) NOT NULL,
+    CurrentTradeID NUMERIC(11) NOT NULL,
+    SK_CustomerID NUMERIC(11) NOT NULL,
+    SK_AccountID NUMERIC(11) NOT NULL,
+    SK_SecurityID NUMERIC(11) NOT NULL,
+    SK_CompanyID NUMERIC(11) NOT NULL,
+    SK_DateID NUMERIC(11) NOT NULL,
+    SK_TimeID NUMERIC(11) NOT NULL,
+    CurrentPrice NUMERIC(8,2) NOT NULL,
+    CurrentHolding NUMERIC(6) NOT NULL,
+    BatchID NUMERIC(5) NOT NULL
+);
+
 DROP TRIGGER IF EXISTS tpcdi.ADD_DimAccount_SK_CustomerID;
 DROP TRIGGER IF EXISTS tpcdi.ADD_DimAccount_SK_BrokerID;
 DROP TRIGGER IF EXISTS tpcdi.ADD_Prospect_DateID;
 DROP TRIGGER IF EXISTS tpcdi.ADD_FactMarketHistory;
 DROP TRIGGER IF EXISTS tpcdi.ADD_FactWatches;
+DROP TRIGGER IF EXISTS tpcdi.ADD_FactHoldings;
 
 delimiter $$
 
@@ -278,6 +294,30 @@ BEGIN
         FROM DimDate
         WHERE DimDate.DateValue = NEW.DateRemoved
     );
+
+END;
+
+$$
+
+CREATE TRIGGER `ADD_FactHoldings` BEFORE INSERT ON `FactHoldings`
+FOR EACH ROW
+BEGIN
+
+    DECLARE _customerID, _accountID, _securityID, _companyID, _dateID, _timeID NUMERIC(11);
+    DECLARE _price NUMERIC(8,2);
+
+    SELECT DimTrade.SK_CustomerID, DimTrade.SK_AccountID, DimTrade.SK_SecurityID, DimTrade.SK_CompanyID, DimTrade.SK_CloseDateID, DimTrade.SK_CloseTimeID, DimTrade.TradePrice
+    INTO @_customerID, @_accountID, @_securityID, @_companyID, @_dateID, @_timeID, @_price
+    FROM DimTrade
+    WHERE NEW.TradeID = DimTrade.TradeID;
+
+    SET NEW.SK_CustomerID = @_customerID;
+    SET NEW.SK_AccountID = @_accountID;
+    SET NEW.SK_SecurityID = @_securityID;
+    SET NEW.SK_CompanyID = @_companyID;
+    SET NEW.SK_DateID = @_dateID;
+    SET NEW.SK_TimeID = @_timeID;
+    SET NEW.CurrentPrice = @_price;
 
 END;
 

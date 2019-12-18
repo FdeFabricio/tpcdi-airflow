@@ -1,9 +1,45 @@
+DROP TABLE IF EXISTS DimDate;
+CREATE TABLE DimDate (
+    SK_DateID INTEGER NOT NULL PRIMARY KEY,
+    DateValue DATE NOT NULL,
+    DateDesc CHAR(20) NOT NULL,
+    CalendarYearID NUMERIC(4) NOT NULL,
+    CalendarYearDesc CHAR(20) NOT NULL,
+    CalendarQtrID NUMERIC(5) NOT NULL,
+    CalendarQtrDesc CHAR(20) NOT NULL,
+    CalendarMonthID NUMERIC(6) NOT NULL,
+    CalendarMonthDesc CHAR(20) NOT NULL,
+    CalendarWeekID NUMERIC(6) NOT NULL,
+    CalendarWeekDesc CHAR(20) NOT NULL,
+    DayOfWeekNum NUMERIC(1) NOT NULL,
+    DayOfWeekDesc CHAR(10) NOT NULL,
+    FiscalYearID NUMERIC(4) NOT NULL,
+    FiscalYearDesc CHAR(20) NOT NULL,
+    FiscalQtrID NUMERIC(5) NOT NULL,
+    FiscalQtrDesc CHAR(20) NOT NULL,
+    HolidayFlag BOOLEAN
+);
+
+DROP TABLE IF EXISTS DimTime;
+CREATE TABLE DimTime (
+    SK_TimeID NUMERIC(11) NOT NULL PRIMARY KEY,
+    TimeValue TIME NOT NULL,
+    HourID numeric(2) NOT NULL,
+    HourDesc CHAR(20) NOT NULL,
+    MinuteID numeric(2) NOT NULL,
+    MinuteDesc CHAR(20) NOT NULL,
+    SecondID numeric(2) NOT NULL,
+    SecondDesc CHAR(20) NOT NULL,
+    MarketHoursFlag BOOLEAN,
+    OfficeHoursFlag BOOLEAN
+);
+
 DROP TABLE IF EXISTS DimAccount;
 CREATE TABLE DimAccount (
-    SK_AccountID INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    SK_AccountID NUMERIC(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
     AccountID INTEGER NOT NULL,
-    SK_BrokerID INTEGER NOT NULL,
-    SK_CustomerID INTEGER NOT NULL,
+    SK_BrokerID NUMERIC(11) NOT NULL,
+    SK_CustomerID NUMERIC(11) NOT NULL,
     Status CHAR(10) NOT NULL,
     AccountDesc CHAR(50),
     TaxStatus NUMERIC(1) NOT NULL CHECK (TaxStatus IN (0, 1, 2)),
@@ -15,13 +51,13 @@ CREATE TABLE DimAccount (
 
 DROP TABLE IF EXISTS DimSecurity;
 CREATE TABLE DimSecurity(
-    SK_SecurityID INTEGER NOT NULL PRIMARY KEY,
+    SK_SecurityID NUMERIC(11) NOT NULL PRIMARY KEY,
     Symbol CHAR(15) NOT NULL,
     Issue CHAR(6) NOT NULL,
     Status CHAR(10) NOT NULL,
     Name CHAR(70) NOT NULL,
     ExchangeID CHAR(6) NOT NULL,
-    SK_CompanyID INTEGER NOT NULL,
+    SK_CompanyID NUMERIC(11) NOT NULL,
     SharesOutstanding INTEGER NOT NULL,
     FirstTrade DATE NOT NULL,
     FirstTradeOnExchange DATE NOT NULL,
@@ -35,8 +71,8 @@ CREATE TABLE DimSecurity(
 DROP TABLE IF EXISTS Prospect;
 CREATE TABLE Prospect(
     AgencyID CHAR(30) NOT NULL,
-    SK_RecordDateID INTEGER NOT NULL,
-    SK_UpdateDateID INTEGER NOT NULL,
+    SK_RecordDateID NUMERIC(11) NOT NULL,
+    SK_UpdateDateID NUMERIC(11) NOT NULL,
     BatchID NUMERIC(5) NOT NULL,
     IsCustomer BOOLEAN NOT NULL,
     LastName CHAR(30) NOT NULL,
@@ -68,15 +104,15 @@ CREATE TABLE Prospect(
 
 DROP TABLE IF EXISTS FactMarketHistory;
 CREATE TABLE FactMarketHistory(
-    SK_SecurityID INTEGER NOT NULL,
-    SK_CompanyID INTEGER NOT NULL REFERENCES DimCompany (SK_CompanyID),
-    SK_DateID INTEGER NOT NULL REFERENCES DimDate (SK_DateID),
+    SK_SecurityID NUMERIC(11) NOT NULL,
+    SK_CompanyID NUMERIC(11) NOT NULL REFERENCES DimCompany (SK_CompanyID),
+    SK_DateID NUMERIC(11) NOT NULL REFERENCES DimDate (SK_DateID),
     PERatio NUMERIC(10,2),
     Yield NUMERIC(5,2) NOT NULL,
     FiftyTwoWeekHigh NUMERIC(8,2) NOT NULL,
-    SK_FiftyTwoWeekHighDate INTEGER NOT NULL,
+    SK_FiftyTwoWeekHighDate NUMERIC(11) NOT NULL,
     FiftyTwoWeekLow NUMERIC(8,2) NOT NULL,
-    SK_FiftyTwoWeekLowDate INTEGER NOT NULL,
+    SK_FiftyTwoWeekLowDate NUMERIC(11) NOT NULL,
     ClosePrice NUMERIC(8,2) NOT NULL,
     DayHigh NUMERIC(8,2) NOT NULL,
     DayLow NUMERIC(8,2) NOT NULL,
@@ -86,6 +122,14 @@ CREATE TABLE FactMarketHistory(
     Symbol CHAR(15) NOT NULL,
     FiftyTwoWeekLowDate DATE NOT NULL,
     FiftyTwoWeekHighDate DATE NOT NULL,
+    prev1_quarter NUMERIC(1) NOT NULL,
+    prev2_quarter NUMERIC(1) NOT NULL,
+    prev3_quarter NUMERIC(1) NOT NULL,
+    prev4_quarter NUMERIC(1) NOT NULL,
+    prev1_year NUMERIC(4) NOT NULL,
+    prev2_year NUMERIC(4) NOT NULL,
+    prev3_year NUMERIC(4) NOT NULL,
+    prev4_year NUMERIC(4) NOT NULL
 );
 
 DROP TABLE IF EXISTS FactWatches;
@@ -157,9 +201,10 @@ CREATE TRIGGER `ADD_FactMarketHistory` BEFORE INSERT ON `FactMarketHistory`
 FOR EACH ROW
 BEGIN
     DECLARE _sec_id, _cmp_id INT;
+    DECLARE _dividend FLOAT;
 
-    SELECT DimSecurity.SK_SecurityID, DimSecurity.SK_CompanyID
-    INTO @_sec_id, @_cmp_id
+    SELECT DimSecurity.SK_SecurityID, DimSecurity.SK_CompanyID, DimSecurity.Dividend
+    INTO @_sec_id, @_cmp_id, @_dividend
     FROM DimSecurity
     WHERE DimSecurity.Symbol = NEW.Symbol AND
           DimSecurity.EffectiveDate <= NEW.Date AND
@@ -186,9 +231,17 @@ BEGIN
         WHERE DimDate.DateValue = NEW.FiftyTwoWeekLowDate
     );
 
+    SET NEW.PERatio = (
+        SELECT NEW.ClosePrice / SUM(Financial.FI_BASIC_EPS)
+        FROM Financial
+        WHERE Financial.SK_CompanyID = @_cmp_id AND (
+              (Financial.FI_YEAR = NEW.prev1_year AND Financial.FI_QTR = NEW.prev1_quarter ) OR
+              (Financial.FI_YEAR = NEW.prev2_year AND Financial.FI_QTR = NEW.prev2_quarter ) OR
+              (Financial.FI_YEAR = NEW.prev3_year AND Financial.FI_QTR = NEW.prev3_quarter ) OR
+              (Financial.FI_YEAR = NEW.prev4_year AND Financial.FI_QTR = NEW.prev4_quarter ))
+    );
 
-
-
+    SET NEW.Yield = @_dividend * 100 / NEW.ClosePrice;
 
 END;
 

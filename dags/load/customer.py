@@ -19,7 +19,7 @@ def load(conn):
     cur.execute("""
         DROP TABLE IF EXISTS DimCustomer;
         CREATE TABLE DimCustomer (
-            SK_CustomerID INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT,
+            SK_CustomerID NUMERIC(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
             CustomerID INTEGER NOT NULL,
             TaxID CHAR(20) NOT NULL,
             Status CHAR(10) NOT NULL,

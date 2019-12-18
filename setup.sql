@@ -88,12 +88,24 @@ CREATE TABLE FactMarketHistory(
     FiftyTwoWeekHighDate DATE NOT NULL,
 );
 
-
+DROP TABLE IF EXISTS FactWatches;
+CREATE TABLE FactWatches (
+    SK_CustomerID NUMERIC(11) NOT NULL,
+    SK_SecurityID NUMERIC(11) NOT NULL,
+    SK_DateID_DatePlaced NUMERIC(11) NOT NULL,
+    SK_DateID_DateRemoved NUMERIC(11),
+    BatchID NUMERIC(5) NOT NULL,
+    CustomerID NUMERIC(11) NOT NULL,
+    Symbol CHAR(15) NOT NULL,
+    Date DATE NOT NULL,
+    DateRemoved DATE
+);
 
 DROP TRIGGER IF EXISTS tpcdi.ADD_DimAccount_SK_CustomerID;
 DROP TRIGGER IF EXISTS tpcdi.ADD_DimAccount_SK_BrokerID;
 DROP TRIGGER IF EXISTS tpcdi.ADD_Prospect_DateID;
 DROP TRIGGER IF EXISTS tpcdi.ADD_FactMarketHistory;
+DROP TRIGGER IF EXISTS tpcdi.ADD_FactWatches;
 
 delimiter $$
 
@@ -179,5 +191,43 @@ BEGIN
 
 
 END;
+
+$$
+
+CREATE TRIGGER `ADD_FactWatches` BEFORE INSERT ON `FactWatches`
+FOR EACH ROW
+BEGIN
+
+    SET NEW.SK_CustomerID = (
+        SELECT DimCustomer.SK_CustomerID
+        FROM DimCustomer
+        WHERE DimCustomer.CustomerID = NEW.CustomerID AND
+            DimCustomer.EffectiveDate <= NEW.Date AND
+            DimCustomer.EndDate > NEW.Date
+    );
+
+    SET NEW.SK_SecurityID = (
+        SELECT DimSecurity.SK_SecurityID
+        FROM DimSecurity
+        WHERE DimSecurity.Symbol = NEW.Symbol AND
+            DimSecurity.EffectiveDate <= NEW.Date AND
+            DimSecurity.EndDate > NEW.Date
+    );
+
+    SET NEW.SK_DateID_DatePlaced = (
+        SELECT DimDate.SK_DateID
+        FROM DimDate
+        WHERE DimDate.DateValue = NEW.Date
+    );
+
+    SET NEW.SK_DateID_DateRemoved = (
+        SELECT DimDate.SK_DateID
+        FROM DimDate
+        WHERE DimDate.DateValue = NEW.DateRemoved
+    );
+
+END;
+
+$$
 
 delimiter ;

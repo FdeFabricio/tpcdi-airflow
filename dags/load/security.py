@@ -51,6 +51,10 @@ def load(conn):
 
     # needs to execute setup.sql first
 
+    df_security = pd.DataFrame(
+        columns=["Symbol", "Issue", "Status", "Name", "ExchangeID", "SK_CompanyID", "SharesOutstanding", "FirstTrade",
+                 "FirstTradeOnExchange", "Dividend", "IsCurrent", "BatchID", "EffectiveDate", "EndDate"])
+    
     status_types = {}
     with open(status_type_file_path, 'r') as f:
         for line in f:
@@ -94,26 +98,25 @@ def load(conn):
                         condition.format(security['SK_CompanyID']),
                         security['EffectiveDate'],
                         security['EffectiveDate']))
-                cur.execute(query)
+                _ = cur.execute(query)
                 res = cur.fetchone()
                 security['SK_CompanyID'] = str(res[0])
-                dim_security[res[1]].append(security)
+                dim_security[security["Symbol"]].append(security)
     
     cur.close()
     conn.close()
-    
-    df_security = pd.DataFrame(
-        columns=["Symbol", "Issue", "Status", "Name", "ExchangeID", "SK_CompanyID", "SharesOutstanding", "FirstTrade",
-                 "FirstTradeOnExchange", "Dividend", "IsCurrent", "BatchID", "EffectiveDate", "EndDate"])
     
     for CIK, entries in tqdm(dim_security.items()):
         for (old, new) in zip(entries, entries[1:] + [None]):
             if not new:
                 old['IsCurrent'] = '1'
                 old['EndDate'] = '9999-12-31'
-            else:
-                old['EndDate'] = new['EffectiveDate']
-            df_security = df_security.append(old, ignore_index=True)
+                continue
+            old['EndDate'] = new['EffectiveDate']
+    
+    for CIK, entries in tqdm(dim_security.items()):
+        for entry in entries:
+            df_security = df_security.append(entry, ignore_index=True)
     
     df_security["SK_SecurityID"] = df_security.index
     df_security.to_sql("DimSecurity", index=False, if_exists="append", con=get_engine())

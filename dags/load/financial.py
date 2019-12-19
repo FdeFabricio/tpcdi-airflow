@@ -1,4 +1,4 @@
-from collections import defaultdict
+import logging
 from datetime import datetime
 from glob import glob
 
@@ -6,20 +6,14 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm_notebook as tqdm
 
-from sqlalchemy import create_engine, Table, MetaData
-from sqlalchemy.sql import select
-
-
-from utils.utils import bulk_load
-
-
 from utils.utils import data_folder_path, get_engine
 
 datetime.date  # force datetime import
 
 
-def load():
-
+def load(conn):
+    cur = conn.cursor()
+    
     finwire_schema = [
         ['PTS', 15],
         ['RecType', 3],
@@ -37,14 +31,15 @@ def load():
         ['Liabilities', 17],
         ['shOut', 13],
         ['DilutedShOut', 13],
-        ['CoNameOrCIK', [60,10]]
+        ['CoNameOrCIK', [60, 10]]
     ]
     
     financial_map = {
-        'SK_CompanyID': [True, ''],
+        'CoNameOrCIK': [False, 'CoNameOrCIK'],
         'FI_YEAR': [False, 'Year'],
         'FI_QTR': [False, 'Quarter'],
-        'FI_QTR_START_DATE': [True, 'datetime.strptime(record[\'QtrStartDate\'].split(\'-\')[0], \'%Y%m%d\').strftime(\'%Y-%m-%d\')'],
+        'FI_QTR_START_DATE': [True,
+                              'datetime.strptime(record[\'QtrStartDate\'].split(\'-\')[0], \'%Y%m%d\').strftime(\'%Y-%m-%d\')'],
         'FI_REVENUE': [False, 'Revenue'],
         'FI_NET_EARN': [False, 'Earnings'],
         'FI_BASIC_EPS': [False, 'EPS'],
@@ -55,16 +50,14 @@ def load():
         'FI_LIABILITY': [False, 'Liabilities'],
         'FI_OUT_BASIC': [False, 'shOut'],
         'FI_OUT_DILUT': [False, 'DilutedShOut'],
+        'Date': [True, 'datetime.strptime(record[\'PTS\'], \'%Y%m%d-%H%M%S\').strftime(\'%Y-%m-%d\')'],
     }
     
-    financials = []
-    df_financials = pd.DataFrame()
-    counter=1
+    logging.info("Reading input file")
+    df_financial = pd.DataFrame()
     for file in tqdm(sorted(glob(data_folder_path + "FINWIRE*"))):
         if '_audit' in file:
             continue
-        print(file)
-        counter+=1
         with open(file, 'r') as f:
             for line in f:
                 if not line[15:18] == 'FIN':
@@ -73,11 +66,10 @@ def load():
                 record = {}
                 financial = {}
                 for entry in finwire_schema:
-                    value = None
                     if entry[0] == 'CoNameOrCIK':
-                        value = line[offset:offset+10].strip()
+                        value = line[offset:offset + 10].strip()
                         if not value.isdigit():
-                            value = line[offset:offset+60].strip()
+                            value = line[offset:offset + 60].strip()
                         record[entry[0]] = value
                         continue
                     value = line[offset:offset + entry[1]].strip()
@@ -91,19 +83,16 @@ def load():
                             financial[k] = eval(v[1])
                         except (ValueError, SyntaxError):
                             financial[k] = np.nan
-                            
-                ##########################################################################
-                engine = get_engine()
-                metadata=MetaData()
-                dimcompany = Table('dimcompany', metadata, autoload=True, autoload_with=engine)
-                s = None
-                if record['CoNameOrCIK'].isdigit():
-                    s = select([dimcompany.c.SK_CompanyID]).where(dimcompany.c.CompanyID==record['CoNameOrCIK'])
-                else:
-                    s = select([dimcompany.c.SK_CompanyID]).where(dimcompany.c.Name==record['CoNameOrCIK'])
-                financial['SK_CompanyID'] = engine.execute(s).scalar()
-               
-                financials = financials + [financial]
-
-    df_financials = pd.DataFrame(financials)     
-    df_financials.to_sql("Financial", index=False, if_exists="append", con=get_engine())
+                
+                financial['SK_CompanyID'] = 0  # value set by trigger
+                df_financial = df_financial.append(financial, ignore_index=True)
+    
+    logging.info("Inserting into MySQL")
+    df_financial.to_sql("Financial", index=False, if_exists="append", con=get_engine())
+    
+    logging.info("Dropping auxiliary columns")
+    cur.execute("DROP TRIGGER tpcdi.ADD_Financial;")
+    cur.execute("ALTER TABLE Financial DROP COLUMN Date;")
+    cur.execute("ALTER TABLE Financial DROP COLUMN CoNameOrCIK;")
+    
+    conn.commit()

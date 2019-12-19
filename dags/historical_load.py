@@ -3,8 +3,8 @@ from airflow.hooks.mysql_hook import MySqlHook
 from airflow.operators.python_operator import PythonOperator
 from pandarallel import pandarallel
 
-from load import account, status_type, date, customer, company, broker, holdings, security, prospect, time, trade, \
-    watches
+from load import account, broker, company, customer, date, financial, holdings, prospect, security, status_type, time, \
+    trade, watches
 
 args = {
     'owner': 'airflow',
@@ -12,7 +12,7 @@ args = {
     'provide_context': True
 }
 
-pandarallel.initialize()
+pandarallel.initialize(nb_workers=2)
 
 conn = MySqlHook(mysql_conn_id='mysql_tpcdi').get_conn()
 
@@ -95,6 +95,13 @@ fact_holdings = PythonOperator(
     op_kwargs={'conn': conn},
     dag=dag)
 
+financial = PythonOperator(
+    task_id='Financial',
+    provide_context=False,
+    python_callable=financial.load,
+    op_kwargs={'conn': conn},
+    dag=dag)
+
 prospect = PythonOperator(
     task_id='Prospect',
     provide_context=False,
@@ -102,10 +109,13 @@ prospect = PythonOperator(
     op_kwargs={'conn': conn, 'ds': "{{ ds }}"},
     dag=dag)
 
+# first phase
+
 # second phase
 dim_account << dim_broker
 dim_account << dim_customer
 dim_security << dim_company
+financial << dim_company
 prospect << dim_customer
 prospect << dim_date
 
@@ -114,5 +124,15 @@ dim_trade << dim_account
 dim_trade << dim_date
 dim_trade << dim_security
 dim_trade << dim_time
+# fact_cash_balance << dim_account
+# fact_cash_balance << dim_date
+# fact_cash_balance << dim_time
+# fact_market_history << dim_date
+# fact_market_history << dim_security
+# fact_market_history << financial
+fact_watches << dim_customer
+fact_watches << dim_security
+fact_watches << dim_date
 
+# fourth phase
 fact_holdings << dim_trade

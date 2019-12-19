@@ -14,7 +14,8 @@ prospect_file_path = data_folder_path + "Prospect.csv"
 NULL = ""
 
 
-def load():
+def load(conn):
+    cur = conn.cursor()
     tax_rate = get_tax_rate()
     df_prospect = get_prospect_df()
     
@@ -136,6 +137,10 @@ def load():
     
     logging.info("Inserting into MySQL")
     df_customers.to_sql("DimCustomer", index=False, if_exists="append", con=get_engine())
+
+    logging.info("Adding index to table")
+    cur.execut("ALTER TABLE DimCustomer ADD INDEX(CustomerID, EndDate, EffectiveDate);")
+    conn.commit()
 
 
 def get_2l_data(customer, first, second):

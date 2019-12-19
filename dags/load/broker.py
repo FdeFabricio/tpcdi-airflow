@@ -1,3 +1,5 @@
+import logging
+
 import pandas as pd
 
 from utils.utils import data_folder_path, get_engine
@@ -6,7 +8,8 @@ file_path = data_folder_path + "HR.csv"
 date_file_path = data_folder_path + "Date.txt"
 
 
-def load():
+def load(conn):
+    cur = conn.cursor()
     min_date = pd.read_csv(date_file_path, header=None, delimiter="|")[1].min()
     df = pd.read_csv(file_path,
                      names=["BrokerID", "ManagerID", "FirstName", "LastName", "MiddleInitial", "EmployeeJobCode",
@@ -21,3 +24,7 @@ def load():
     df["SK_BrokerID"] = df.index
     
     df.to_sql("DimBroker", index=False, if_exists="append", con=get_engine())
+    
+    logging.info("Adding index to table")
+    cur.execut("ALTER TABLE DimBroker ADD INDEX(BrokerID);")
+    conn.commit()

@@ -24,6 +24,7 @@ def load(conn, ds):
             UPPER(IFNULL(PostalCode, ''))
         ));
     """)
+    cur.execute("ALTER TABLE DimCustomer ADD INDEX(ProspectKey, Status);")
     
     logging.info("Reading input file")
     df_prospect = pd.read_csv(prospect_file_path, na_values=[""], keep_default_na=False,

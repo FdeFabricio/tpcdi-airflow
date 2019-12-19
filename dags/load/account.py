@@ -108,7 +108,11 @@ def load(conn):
     df_accounts["SK_AccountID"] = df_accounts.index
     df_accounts.to_sql("DimAccount", index=False, if_exists="append", con=get_engine())
     
+    logging.info("Dropping auxiliary trigger")
     cur.execute("DROP TRIGGER tpcdi.ADD_DimAccount;")
+    
+    logging.info("Adding index to table")
+    cur.execut("ALTER TABLE DimAccount ADD INDEX(AccountID, EffectiveDate, EndDate);")
     
     conn.commit()
 

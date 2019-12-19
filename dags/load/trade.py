@@ -40,11 +40,11 @@ def load(conn):
     df_merged = pd.merge(df_trade, df_trade_history, left_on="T_ID", right_on="TH_T_ID")
     
     df_merged["BatchID"] = 1
-    df_merged["Status"] = df_merged["T_ST_ID"].apply(lambda x: status_types[x])
-    df_merged["Type"] = df_merged["T_TT_ID"].apply(lambda x: trade_types[x])
+    df_merged["Status"] = df_merged["T_ST_ID"].parallel_apply(lambda x: status_types[x])
+    df_merged["Type"] = df_merged["T_TT_ID"].parallel_apply(lambda x: trade_types[x])
     
     logging.info("Applying updates")
-    df_merged = df_merged.groupby("T_ID").parallel_apply(group_updates)
+    df_merged = df_merged.head(1000).groupby("T_ID").parallel_apply(group_updates)
     
     df_merged.rename(columns={
         "T_ID": "TradeID", "T_IS_CASH": "CashFlag", "T_QTY": "Quantity", "T_BID_PRICE": "BidPrice",

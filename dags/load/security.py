@@ -1,3 +1,4 @@
+import logging
 from collections import defaultdict
 from datetime import datetime
 from glob import glob
@@ -119,3 +120,8 @@ def load(conn):
     
     df_security["SK_SecurityID"] = df_security.index
     df_security.to_sql("DimSecurity", index=False, if_exists="append", con=get_engine())
+    
+    logging.info("Adding index to table")
+    cur.execut("ALTER TABLE DimSecurity ADD INDEX(Symbol, EffectiveDate, EndDate);")
+    
+    conn.commit()

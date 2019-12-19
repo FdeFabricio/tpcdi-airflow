@@ -27,6 +27,7 @@ dim_date = PythonOperator(
     task_id='DimDate',
     provide_context=False,
     python_callable=date.load,
+    op_kwargs={'conn': conn},
     dag=dag)
 
 dim_time = PythonOperator(
@@ -46,6 +47,7 @@ dim_customer = PythonOperator(
     task_id='DimCustomer',
     provide_context=False,
     python_callable=customer.load,
+    op_kwargs={'conn': conn},
     dag=dag)
 
 dim_company = PythonOperator(

@@ -502,3 +502,48 @@ $$
 delimiter ;
 
 -------------------------------------------------------------------------
+
+DROP TABLE IF EXISTS FactCashBalances;
+CREATE TABLE FactCashBalances ( 
+	SK_CustomerID INTEGER NOT NULL REFERENCES DimCustomer (SK_CustomerID),
+	SK_AccountID INTEGER NOT NULL REFERENCES DimAccount (SK_AccountID),
+	SK_DateID INTEGER NOT NULL REFERENCES DimDate (SK_DateID),
+	Cash NUMERIC(15,2) NOT NULL,
+	BatchID NUMERIC(5),
+	
+	CT_CA_ID NUMERIC (11) NOT NULL,
+	Date date NOT NULL,
+	DayTotal NUMERIC (15,2) NOT NULL
+);
+
+DROP TRIGGER IF EXISTS tpcdi.ADD_FactCashBalances;
+delimiter $$
+CREATE TRIGGER `ADD_FactCashBalances` BEFORE INSERT ON `FactCashBalances`
+FOR EACH ROW
+BEGIN
+	DECLARE _customerID, _accountID NUMERIC(11);
+
+	SELECT DimAccount.SK_CustomerID, DimAccount.SK_AccountID
+	INTO @_customerID, @_accountID
+	FROM DimAccount
+	WHERE DimAccount.AccountID = NEW.CT_CA_ID AND
+	NEW.Date >= DimAccount.EffectiveDate AND
+	NEW.Date < DimAccount.EndDate;
+
+	
+	SET NEW.SK_DateID = (
+		SELECT DimDate.SK_DateID
+		FROM DimDate
+		WHERE DimDate.DateValue = NEW.DATE
+	);
+	
+	SET NEW.Cash = NEW.DayTotal + IFNULL((
+		SELECT FactCashBalances.Cash
+		FROM FactCashBalances
+		WHERE NEW.SK_AccountID = FactCashBalances.SK_AccountID
+		ORDER BY SK_DateID DESC
+		LIMIT 1
+	),0);
+END;
+$$
+delimiter ;

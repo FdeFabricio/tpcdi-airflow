@@ -534,7 +534,7 @@ BEGIN
 	SET NEW.SK_DateID = (
 		SELECT DimDate.SK_DateID
 		FROM DimDate
-		WHERE DimDate.DateValue = NEW.DATE
+		WHERE DimDate.DateValue = NEW.Date
 	);
 	
 	SET NEW.Cash = NEW.DayTotal + IFNULL((

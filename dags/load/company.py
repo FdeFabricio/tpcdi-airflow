@@ -1,15 +1,20 @@
-import os
-from glob import glob
 from collections import defaultdict
+from datetime import datetime
+from glob import glob
+
+import numpy as np
+import pandas as pd
 from tqdm import tqdm_notebook as tqdm
-from utils.utils import data_folder_path, bulk_load
+
+from utils.utils import data_folder_path, get_engine
 
 status_type_file_path = data_folder_path + "StatusType.txt"
 industry_file_path = data_folder_path + "Industry.txt"
 tmp_file_path = data_folder_path + "dimCompany.txt"
+datetime.date  # force datetime import
 
 
-def load(conn):
+def load():
     status_types = {}
     with open(status_type_file_path, 'r') as f:
         for line in f:
@@ -40,7 +45,7 @@ def load(conn):
         ['CEOname', 46],
         ['Description', 150]
     ]
-
+    
     dim_company_map = {
         'SK_CompanyID': [True, ''],
         'CompanyID': [False, 'CIK'],
@@ -48,8 +53,7 @@ def load(conn):
         'Name': [False, 'CompanyName'],
         'Industry': [True, 'industries[record[\'IndustryID\']]'],
         'SPrating': [False, 'SPrating'],
-        'isLowGrade': [True,
-                       '\'0\' if record[\'SPrating\'] and (record[\'SPrating\'].startswith(\'A\') or record[\'SPrating\'].startswith(\'BBB\')) else \'1\''],
+        'isLowGrade': [True, '\'0\' if record[\'SPrating\'] and (record[\'SPrating\'].startswith(\'A\') or record[\'SPrating\'].startswith(\'BBB\')) else \'1\''],
         'CEO': [False, 'CEOname'],
         'AddressLine1': [False, 'AddrLine1'],
         'AddressLine2': [False, 'AddrLine2'],
@@ -58,12 +62,10 @@ def load(conn):
         'StateProv': [False, 'StateProvince'],
         'Country': [False, 'Country'],
         'Description': [False, 'Description'],
-        'FoundingDate': [True,
-                         'datetime.strptime(record[\'FoundingDate\'].split(\'-\')[0], \'%Y%m%d\').strftime(\'%Y-%m-%d\')'],
+        'FoundingDate': [True, 'datetime.strptime(record[\'FoundingDate\'].split(\'-\')[0], \'%Y%m%d\').strftime(\'%Y-%m-%d\')'],
         'IsCurrent': [True, '\'0\''],
         'BatchID': [True, '\'0\''],
-        'EffectiveDate': [True,
-                          'datetime.strptime(record[\'PTS\'], \'%Y%m%d-%H%M%S\').strftime(\'%Y-%m-%d %H:%M:%S\')'],
+        'EffectiveDate': [True, 'datetime.strptime(record[\'PTS\'], \'%Y%m%d-%H%M%S\').strftime(\'%Y-%m-%d\')'],
         'EndDate': [True, 'None']
     }
     
@@ -89,8 +91,8 @@ def load(conn):
                     else:
                         try:
                             company[k] = eval(v[1])
-                        except:
-                            company[k] = ''
+                        except (ValueError, SyntaxError):
+                            company[k] = np.nan
                 
                 dim_companies[record['CIK']].append(company)
     
@@ -102,41 +104,10 @@ def load(conn):
                 continue
             old['EndDate'] = new['EffectiveDate']
     
-    with open(tmp_file_path, 'w') as out:
-        n = 0
-        for CIK, entries in tqdm(dim_companies.items()):
-            for entry in entries:
-                out.write(str(n))
-                out.write('|'.join(entry.values()) + '\n')
-                n += 1
+    df_companies = pd.DataFrame()
+    for CIK, entries in tqdm(dim_companies.items()):
+        for entry in entries:
+            df_companies = df_companies.append(entry, ignore_index=True)
     
-    cur = conn.cursor()
-    cur.execute("""
-      DROP TABLE IF EXISTS DimCompany;
-      CREATE TABLE DimCompany (
-        SK_CompanyID INTEGER NOT NULL PRIMARY KEY,
-        CompanyID INTEGER NOT NULL,
-        Status CHAR(10) Not NULL,
-        Name CHAR(60) Not NULL,
-        Industry CHAR(50) Not NULL,
-        SPrating CHAR(4),
-        isLowGrade BOOLEAN,
-        CEO CHAR(100) Not NULL,
-        AddressLine1 CHAR(80),
-        AddressLine2 CHAR(80),
-        PostalCode CHAR(12) Not NULL,
-        City CHAR(25) Not NULL,
-        StateProv CHAR(20) Not NULL,
-        Country CHAR(24),
-        Description CHAR(150) Not NULL,
-        FoundingDate DATE,
-        IsCurrent BOOLEAN Not NULL,
-        BatchID numeric(5) Not NULL,
-        EffectiveDate DATE Not NULL,
-        EndDate DATE Not NULL
-      );
-    """)
-    
-    bulk_load(conn, 'DimCompany', tmp_file_path, '|')
-    
-    # os.remove(tmp_file_path)
+    df_companies["SK_CompanyID"] = df_companies.index
+    df_companies.to_sql("DimCompany", index=False, if_exists="append", con=get_engine())

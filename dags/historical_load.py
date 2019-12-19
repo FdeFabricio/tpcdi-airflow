@@ -1,14 +1,18 @@
 import airflow
 from airflow.hooks.mysql_hook import MySqlHook
 from airflow.operators.python_operator import PythonOperator
+from pandarallel import pandarallel
 
-from load import account, status_type, date, customer, company, dim_broker, holdings, security, prospect, time, watches
+from load import account, status_type, date, customer, company, broker, holdings, security, prospect, time, trade, \
+    watches
 
 args = {
     'owner': 'airflow',
     'start_date': airflow.utils.dates.days_ago(7),  # TODO change this
     'provide_context': True
 }
+
+pandarallel.initialize()
 
 conn = MySqlHook(mysql_conn_id='mysql_tpcdi').get_conn()
 
@@ -42,14 +46,12 @@ dim_customer = PythonOperator(
     task_id='DimCustomer',
     provide_context=False,
     python_callable=customer.load,
-    op_kwargs={'conn': conn},
     dag=dag)
 
 dim_company = PythonOperator(
     task_id='DimCompany',
     provide_context=False,
     python_callable=company.load,
-    op_kwargs={'conn': conn},
     dag=dag)
 
 dim_security = PythonOperator(
@@ -62,14 +64,20 @@ dim_security = PythonOperator(
 dim_broker = PythonOperator(
     task_id='DimBroker',
     provide_context=False,
-    python_callable=dim_broker.load,
-    op_kwargs={'conn': conn},
+    python_callable=broker.load,
     dag=dag)
 
 dim_account = PythonOperator(
     task_id='DimAccount',
     provide_context=False,
     python_callable=account.load,
+    op_kwargs={'conn': conn},
+    dag=dag)
+
+dim_trade = PythonOperator(
+    task_id='DimTrade',
+    provide_context=False,
+    python_callable=trade.load,
     op_kwargs={'conn': conn},
     dag=dag)
 
@@ -94,9 +102,17 @@ prospect = PythonOperator(
     op_kwargs={'conn': conn, 'ds': "{{ ds }}"},
     dag=dag)
 
-dim_broker >> dim_account
-dim_customer >> dim_account
-dim_customer >> prospect
-dim_date >> prospect
-dim_company >> dim_security
-# fact_holdings << dim_trade
+# second phase
+dim_account << dim_broker
+dim_account << dim_customer
+dim_security << dim_company
+prospect << dim_customer
+prospect << dim_date
+
+# third phase
+dim_trade << dim_account
+dim_trade << dim_date
+dim_trade << dim_security
+dim_trade << dim_time
+
+fact_holdings << dim_trade

@@ -34,13 +34,13 @@ def load(conn, ds):
     
     logging.info("Setting up values")
     df_prospect["BatchID"] = 1
-    df_prospect["MarketingNameplate"] = df_prospect.apply(get_marketing_nameplate, axis=1)
+    df_prospect["MarketingNameplate"] = df_prospect.parallel_apply(get_marketing_nameplate, axis=1)
     df_prospect["Gender"] = df_prospect["Gender"].apply(convert_genre)
     df_prospect["Date"] = ds  # value used by the trigger
     df_prospect["SK_RecordDateID"] = 0  # value set by the trigger
     df_prospect["SK_UpdateDateID"] = 0  # value set by the trigger
     df_prospect["IsCustomer"] = 0  # value set by the trigger
-    df_prospect["ProspectKey"] = df_prospect.apply(lambda row: ''.join([
+    df_prospect["ProspectKey"] = df_prospect.parallel_apply(lambda row: ''.join([
         pd.notna(row["LastName"]) and str(row["LastName"]) or NULL,
         pd.notna(row["FirstName"]) and str(row["FirstName"]) or NULL,
         pd.notna(row["AddressLine1"]) and str(row["AddressLine1"]) or NULL,

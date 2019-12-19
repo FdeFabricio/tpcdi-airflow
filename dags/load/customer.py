@@ -1,9 +1,11 @@
 import logging
-from lxml import etree as et
-import pandas as pd
+
 import numpy as np
-from utils.utils import data_folder_path, to_upper, get_engine
+import pandas as pd
+from lxml import etree as et
+
 from load.prospect import get_marketing_nameplate
+from utils.utils import data_folder_path, to_upper, get_engine
 
 customer_file_path = data_folder_path + "CustomerMgmt.xml"
 tax_rate_file_path = data_folder_path + "TaxRate.txt"
@@ -12,60 +14,16 @@ prospect_file_path = data_folder_path + "Prospect.csv"
 NULL = ""
 
 
-def load(conn):
-    cur = conn.cursor()
-    
-    logging.info("Creating table")
-    cur.execute("""
-        DROP TABLE IF EXISTS DimCustomer;
-        CREATE TABLE DimCustomer (
-            SK_CustomerID NUMERIC(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
-            CustomerID INTEGER NOT NULL,
-            TaxID CHAR(20) NOT NULL,
-            Status CHAR(10) NOT NULL,
-            LastName CHAR(30) NOT NULL,
-            FirstName CHAR(30) NOT NULL,
-            MiddleInitial CHAR(1),
-            Gender CHAR(1),
-            Tier NUMERIC(1),
-            DOB DATE NOT NULL,
-            AddressLine1 CHAR(80) NOT NULL,
-            AddressLine2 CHAR(80),
-            PostalCode CHAR(12) NOT NULL,
-            City CHAR(25) NOT NULL,
-            StateProv CHAR(20) NOT NULL,
-            Country CHAR(24),
-            Phone1 CHAR(30),
-            Phone2 CHAR(30),
-            Phone3 CHAR(30),
-            Email1 CHAR(50),
-            Email2 CHAR(50),
-            NationalTaxRateDesc CHAR(50),
-            NationalTaxRate NUMERIC(6,5),
-            LocalTaxRateDesc CHAR(50),
-            LocalTaxRate NUMERIC(6,5),
-            AgencyID CHAR(30),
-            CreditRating NUMERIC(5),
-            NetWorth NUMERIC(10),
-            MarketingNameplate CHAR(100),
-            IsCurrent BOOLEAN NOT NULL,
-            BatchID NUMERIC(5) NOT NULL,
-            EffectiveDate DATE NOT NULL,
-            EndDate DATE NOT NULL
-        );
-    """)
-    
+def load():
     tax_rate = get_tax_rate()
     df_prospect = get_prospect_df()
     
     df_customers = pd.DataFrame(
-        columns=["CustomerID", "TaxID", "Status", "LastName", "FirstName", "MiddleInitial", "Gender", "Tier",
-                 "DOB", "AddressLine1", "AddressLine2", "PostalCode", "City", "StateProv", "Country", "Phone1",
-                 "Phone2",
+        columns=["CustomerID", "TaxID", "Status", "LastName", "FirstName", "MiddleInitial", "Gender", "Tier", "DOB",
+                 "AddressLine1", "AddressLine2", "PostalCode", "City", "StateProv", "Country", "Phone1", "Phone2",
                  "Phone3", "Email1", "Email2", "NationalTaxRateDesc", "NationalTaxRate", "LocalTaxRateDesc",
-                 "LocalTaxRate",
-                 "AgencyID", "CreditRating", "NetWorth", "MarketingNameplate", "IsCurrent", "BatchID", "EffectiveDate",
-                 "EndDate"])
+                 "LocalTaxRate", "AgencyID", "CreditRating", "NetWorth", "MarketingNameplate", "IsCurrent", "BatchID",
+                 "EffectiveDate", "EndDate"])
     
     updates = {}
     
@@ -174,6 +132,7 @@ def load(conn):
     df_customers.drop("ProspectKey", inplace=True, axis=1)
     
     df_customers.replace("", np.nan, inplace=True)
+    df_customers["SK_CustomerID"] = df_customers.index
     
     logging.info("Inserting into MySQL")
     df_customers.to_sql("DimCustomer", index=False, if_exists="append", con=get_engine())

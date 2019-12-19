@@ -105,10 +105,10 @@ def load(conn):
                 df_accounts = df_accounts.append(new_row, ignore_index=True)
     
     logging.info("Inserting into MySQL")
+    df_accounts["SK_AccountID"] = df_accounts.index
     df_accounts.to_sql("DimAccount", index=False, if_exists="append", con=get_engine())
     
-    cur.execute("DROP TRIGGER tpcdi.ADD_DimAccount_SK_CustomerID;")
-    cur.execute("DROP TRIGGER tpcdi.ADD_DimAccount_SK_BrokerID;")
+    cur.execute("DROP TRIGGER tpcdi.ADD_DimAccount;")
     
     conn.commit()
 

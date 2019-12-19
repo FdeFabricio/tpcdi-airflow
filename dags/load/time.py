@@ -2,7 +2,7 @@ import pandas as pd
 
 from utils.utils import data_folder_path, get_engine
 
-time_file_path = data_folder_path + "/Time.txt"
+time_file_path = data_folder_path + "Time.txt"
 
 
 def load():

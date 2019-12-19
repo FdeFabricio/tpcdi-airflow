@@ -1,14 +1,15 @@
 from collections import defaultdict
+from datetime import datetime
 from glob import glob
 
 import pandas as pd
 from tqdm import tqdm_notebook as tqdm
-from datetime import datetime
 
 from utils.utils import data_folder_path, get_engine
 
 status_type_file_path = data_folder_path + "StatusType.txt"
 tmp_file_path = data_folder_path + "dimSecurity.txt"
+datetime.date  # force datetime import
 
 finwire_schema = [
     ['PTS', 15],
@@ -48,9 +49,7 @@ dim_security_map = {
 
 def load(conn):
     cur = conn.cursor()
-
-    # needs to execute setup.sql first
-
+    
     df_security = pd.DataFrame(
         columns=["Symbol", "Issue", "Status", "Name", "ExchangeID", "SK_CompanyID", "SharesOutstanding", "FirstTrade",
                  "FirstTradeOnExchange", "Dividend", "IsCurrent", "BatchID", "EffectiveDate", "EndDate"])

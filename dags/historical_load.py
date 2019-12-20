@@ -3,8 +3,8 @@ from airflow.hooks.mysql_hook import MySqlHook
 from airflow.operators.python_operator import PythonOperator
 from pandarallel import pandarallel
 
-from load import account, broker, company, customer, date, financial, holdings, prospect, security, status_type, time, \
-    trade, watches
+from load import account, audit, broker, company, customer, date, financial, holdings, prospect, security, status_type, \
+    time, trade, watches
 
 args = {
     'owner': 'airflow',
@@ -22,6 +22,12 @@ dag = airflow.DAG(
     default_args=args,
     template_searchpath="./sql/",
     max_active_runs=1)
+
+audit = PythonOperator(
+    task_id='Audit',
+    provide_context=False,
+    python_callable=audit.load,
+    dag=dag)
 
 dim_date = PythonOperator(
     task_id='DimDate',

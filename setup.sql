@@ -1,3 +1,15 @@
+DROP TABLE IF EXISTS Audit;
+CREATE TABLE Audit (
+    DataSet CHAR(20) NOT NULL,
+    BatchID NUMERIC(5),
+    Date DATE,
+    Attribute CHAR(50) NOT NULL,
+    Value NUMERIC(15),
+    DValue NUMERIC(15,5)
+);
+
+-------------------------------------------------------------------------
+
 DROP TABLE IF EXISTS DimAccount;
 CREATE TABLE DimAccount(
     SK_AccountID NUMERIC(11) NOT NULL PRIMARY KEY,

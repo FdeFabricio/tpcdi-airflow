@@ -1,19 +1,13 @@
 import logging
-from utils.utils import bulk_load
 
-file_path = 'data/Batch1/TaxRate.txt'
+import pandas as pd
+
+from utils.utils import data_folder_path, get_engine
+
+file_path = data_folder_path + "TaxRate.txt"
 
 
-def load(conn):
+def load():
     logging.info("Begin TaxRate - Historical Load")
-    cur = conn.cursor()
-    cur.execute("""
-      DROP TABLE IF EXISTS TaxRate;
-        CREATE TABLE TaxRate ( TX_ID CHAR(4) Not NULL,
-                                TX_NAME CHAR(50) Not NULL,
-                                TX_RATE numeric(6,5) Not NULL
-        );
-    """)
-
-    bulk_load(conn, 'TaxRate', file_path, '|')
-
+    df = pd.read_csv(file_path, sep="|", names=["TX_ID", "TX_NAME", "TX_RATE"])
+    df.to_sql("TaxRate", index=False, if_exists="append", con=get_engine())

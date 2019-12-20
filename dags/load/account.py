@@ -113,7 +113,7 @@ def load(conn):
     cur.execute("DROP TRIGGER tpcdi.ADD_DimAccount;")
     
     logging.info("Adding index to table")
-    cur.execut("ALTER TABLE DimAccount ADD INDEX(AccountID, EffectiveDate, EndDate);")
+    cur.execute("ALTER TABLE DimAccount ADD INDEX(AccountID, EffectiveDate, EndDate);")
     
     conn.commit()
 

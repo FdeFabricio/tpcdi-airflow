@@ -3,8 +3,8 @@ from airflow.hooks.mysql_hook import MySqlHook
 from airflow.operators.python_operator import PythonOperator
 from pandarallel import pandarallel
 
-from load import account, audit, broker, company, customer, date, financial, holdings, prospect, security, status_type, \
-    time, trade, watches
+from load import account, audit, broker, company, customer, date, financial, holdings, industry, prospect, security, status_type, \
+    tax_rate, time, trade, trade_type, watches
 
 args = {
     'owner': 'airflow',
@@ -12,9 +12,9 @@ args = {
     'provide_context': True
 }
 
-pandarallel.initialize(nb_workers=2)
+pandarallel.initialize()
 
-conn = MySqlHook(mysql_conn_id='mysql_tpcdi').get_conn()
+conn = MySqlHook(mysql_conn_id='mysql_tpcdi', local_infile=1).get_conn()
 
 dag = airflow.DAG(
     'historical_load',
@@ -40,12 +40,6 @@ dim_time = PythonOperator(
     task_id='DimTime',
     provide_context=False,
     python_callable=time.load,
-    dag=dag)
-
-status_type = PythonOperator(
-    task_id='StatusType',
-    provide_context=False,
-    python_callable=status_type.load,
     op_kwargs={'conn': conn},
     dag=dag)
 
@@ -73,6 +67,7 @@ dim_broker = PythonOperator(
     task_id='DimBroker',
     provide_context=False,
     python_callable=broker.load,
+    op_kwargs={'conn': conn},
     dag=dag)
 
 dim_account = PythonOperator(
@@ -110,6 +105,12 @@ financial = PythonOperator(
     op_kwargs={'conn': conn},
     dag=dag)
 
+industry = PythonOperator(
+    task_id='Industry',
+    provide_context=False,
+    python_callable=industry.load,
+    dag=dag)
+
 prospect = PythonOperator(
     task_id='Prospect',
     provide_context=False,
@@ -117,7 +118,36 @@ prospect = PythonOperator(
     op_kwargs={'conn': conn, 'ds': "{{ ds }}"},
     dag=dag)
 
+status_type = PythonOperator(
+    task_id='StatusType',
+    provide_context=False,
+    python_callable=status_type.load,
+    dag=dag)
+
+tax_rate = PythonOperator(
+    task_id='TaxRate',
+    provide_context=False,
+    python_callable=tax_rate.load,
+    dag=dag)
+
+trade_type = PythonOperator(
+    task_id='TradeType',
+    provide_context=False,
+    python_callable=trade_type.load,
+    dag=dag)
+
+
 # first phase
+# audit
+# industry
+# status_type
+# tax_rate
+# trade_type
+# dim_date
+# dim_time
+# dim_broker
+# dim_customer
+# dim_company
 
 # second phase
 dim_account << dim_broker

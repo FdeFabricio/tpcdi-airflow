@@ -27,5 +27,5 @@ def load(conn):
     df.to_sql("DimBroker", index=False, if_exists="append", con=get_engine())
     
     logging.info("Adding index to table")
-    cur.execut("ALTER TABLE DimBroker ADD INDEX(BrokerID);")
+    cur.execute("ALTER TABLE DimBroker ADD INDEX(BrokerID);")
     conn.commit()

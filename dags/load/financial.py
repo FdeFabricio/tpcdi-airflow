@@ -4,7 +4,6 @@ from glob import glob
 
 import numpy as np
 import pandas as pd
-from tqdm import tqdm_notebook as tqdm
 
 from utils.utils import data_folder_path, get_engine
 
@@ -56,7 +55,7 @@ def load(conn):
     
     logging.info("Reading input file")
     df_financial = pd.DataFrame()
-    for file in tqdm(sorted(glob(data_folder_path + "FINWIRE*"))):
+    for file in sorted(glob(data_folder_path + "FINWIRE*")):
         if '_audit' in file:
             continue
         with open(file, 'r') as f:

@@ -5,7 +5,6 @@ from glob import glob
 
 import numpy as np
 import pandas as pd
-from tqdm import tqdm_notebook as tqdm
 
 from utils.utils import data_folder_path, get_engine
 
@@ -72,11 +71,10 @@ def load():
         'EffectiveDate': [True, 'datetime.strptime(record[\'PTS\'], \'%Y%m%d-%H%M%S\').strftime(\'%Y-%m-%d\')'],
         'EndDate': [True, 'None']
     }
-    df_messages = pd.DataFrame(
-        columns=["MessageDateAndTime", "BatchID", "MessageSource", "MessageText", "MessageType", "MessageData"])
+    df_messages = pd.DataFrame(columns=["BatchID", "MessageSource", "MessageText", "MessageType", "MessageData"])
     dim_companies = defaultdict(list)
     
-    for file in tqdm(sorted(glob(data_folder_path + "FINWIRE*"))):
+    for file in sorted(glob(data_folder_path + "FINWIRE*")):
         if '_audit' in file:
             continue
         with open(file, 'r') as f:
@@ -99,20 +97,20 @@ def load():
                         except (ValueError, SyntaxError):
                             company[k] = np.nan
                 
-                if not is_SPRating_valid(company["SPrating"]):
+                if not is_SPrating_valid(company["SPrating"]):
                     df_messages = df_messages.append({
                         "BatchID": 1,
                         "MessageSource": "DimCompany",
                         "MessageType": "Alert",
                         "MessageText": "Invalid SPRating",
                         "MessageData": "CO_ID = " + company["CompanyID"] + ", CO_SP_RATE = " + company["SPrating"]
-                    })
-                    company["SPRating"] = np.nan
+                    }, ignore_index=True)
+                    company["SPrating"] = np.nan
                     company["isLowGrade"] = np.nan
                 
                 dim_companies[record['CIK']].append(company)
     
-    for CIK, entries in tqdm(dim_companies.items()):
+    for CIK, entries in dim_companies.items():
         for (old, new) in zip(entries, entries[1:] + [None]):
             if not new:
                 old['IsCurrent'] = '1'
@@ -121,7 +119,7 @@ def load():
             old['EndDate'] = new['EffectiveDate']
     
     df_companies = pd.DataFrame()
-    for CIK, entries in tqdm(dim_companies.items()):
+    for CIK, entries in dim_companies.items():
         for entry in entries:
             df_companies = df_companies.append(entry, ignore_index=True)
     
@@ -130,5 +128,5 @@ def load():
     df_messages.to_sql("DImessages", index=False, if_exists="append", con=get_engine())
 
 
-def is_SPRating_valid(value):
+def is_SPrating_valid(value):
     return value in ["AAA", "AA[+/-]", "A[+/-]", "BBB[+/-]", "BB[+/-]", "B[+/-]", "CCC[+/-]", "CC", "C", "D"]

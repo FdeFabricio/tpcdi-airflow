@@ -20,5 +20,5 @@ def load(conn):
     df.to_sql("DimTime", index=False, if_exists="append", con=get_engine())
     
     logging.info("Adding index to table")
-    cur.execut("ALTER TABLE DimTime ADD INDEX(TimeValue);")
+    cur.execute("ALTER TABLE DimTime ADD INDEX(TimeValue);")
     conn.commit()

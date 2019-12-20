@@ -28,8 +28,7 @@ def load(conn, ds):
                  "LocalTaxRate", "AgencyID", "CreditRating", "NetWorth", "MarketingNameplate", "IsCurrent", "BatchID",
                  "EffectiveDate", "EndDate"])
     
-    df_messages = pd.DataFrame(
-        columns=["MessageDateAndTime", "BatchID", "MessageSource", "MessageText", "MessageType", "MessageData"])
+    df_messages = pd.DataFrame(columns=["BatchID", "MessageSource", "MessageText", "MessageType", "MessageData"])
     
     updates = {}
     
@@ -98,27 +97,29 @@ def load(conn, ds):
                     updates[row["CustomerID"]] = []
                 updates[row["CustomerID"]].append(row)
             
-            if row["Tier"] not in ["1", "2", "3"]:
-                df_messages = df_messages.append({
-                    "BatchID": 1,
-                    "MessageSource": "DimCustomer",
-                    "MessageType": "Alert",
-                    "MessageText": "Invalid customer tier",
-                    "MessageData": "C_ID = " + row["CustomerID"] + ", C_TIER = " + row["Tier"]
-                })
+            if "Tier" in row and row["Tier"] is not None and row["Tier"] != NULL:
+                if row["Tier"] not in ["1", "2", "3"]:
+                    df_messages = df_messages.append({
+                        "BatchID": 1,
+                        "MessageSource": "DimCustomer",
+                        "MessageType": "Alert",
+                        "MessageText": "Invalid customer tier",
+                        "MessageData": "C_ID = " + row["CustomerID"] + ", C_TIER = " + row["Tier"]
+                    }, ignore_index=True)
             
-            batch_date = datetime.strptime(ds, "%Y-%m-%d").date()
-            min_date = date(batch_date.year - 100, batch_date.month, batch_date.day)
-            dbo = datetime.strftime(row["DBO"], "%Y-%m-%d").date()
-            
-            if dbo < min_date or dbo > batch_date:
-                df_messages = df_messages.append({
-                    "BatchID": 1,
-                    "MessageSource": "DimCustomer",
-                    "MessageType": "Alert",
-                    "MessageText": "DOB out of range",
-                    "MessageData": "C_ID = " + row["CustomerID"] + ", C_DOB = " + row["DBO"]
-                })
+            if "DBO" in row and row["DBO"] is not None and row["DBO"] != NULL:
+                batch_date = datetime.strptime(ds, "%Y-%m-%d").date()
+                min_date = date(batch_date.year - 100, batch_date.month, batch_date.day)
+                dbo = datetime.strftime(row["DBO"], "%Y-%m-%d").date()
+                
+                if dbo < min_date or dbo > batch_date:
+                    df_messages = df_messages.append({
+                        "BatchID": 1,
+                        "MessageSource": "DimCustomer",
+                        "MessageType": "Alert",
+                        "MessageText": "DOB out of range",
+                        "MessageData": "C_ID = " + row["CustomerID"] + ", C_DOB = " + row["DBO"]
+                    }, ignore_index=True)
         
         elif action_type == "INACT":
             customer_id = customer.attrib.get('C_ID', None)
@@ -167,7 +168,7 @@ def load(conn, ds):
     df_messages.to_sql("DImessages", index=False, if_exists="append", con=get_engine())
     
     logging.info("Adding index to table")
-    cur.execut("ALTER TABLE DimCustomer ADD INDEX(CustomerID, EndDate, EffectiveDate);")
+    cur.execute("ALTER TABLE DimCustomer ADD INDEX(CustomerID, EndDate, EffectiveDate);")
     conn.commit()
 
 

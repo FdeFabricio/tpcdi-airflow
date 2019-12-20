@@ -1,20 +1,13 @@
 import logging
 
-from utils.utils import bulk_load
+import pandas as pd
 
-file_path = 'data/Batch1/StatusType.txt'
+from utils.utils import data_folder_path, get_engine
+
+file_path = data_folder_path + "StatusType.txt"
 
 
-def load(conn):
+def load():
     logging.info("Begin StatusType - Historical Load")
-    cur = conn.cursor()
-    
-    cur.execute("""
-      DROP TABLE IF EXISTS StatusType;
-      CREATE TABLE StatusType (
-        ST_ID CHAR(4) NOT NULL,
-        ST_NAME CHAR(10) NOT NULL
-      );
-    """)
-    
-    bulk_load(conn, 'StatusType', file_path, '|')
+    df = pd.read_csv(file_path, sep="|", names=["ST_ID", "ST_NAME"])
+    df.to_sql("StatusType", index=False, if_exists="append", con=get_engine())

@@ -9,7 +9,7 @@ data_folder_path = "data/Batch1/"
 def bulk_load(conn, table, file, delimiter):
     cur = conn.cursor()
     cur.execute("""
-        LOAD DATA LOCAL INFILE '{file}'
+        LOAD DATA INFILE '{file}'
         INTO TABLE {table}
         FIELDS TERMINATED BY '{delimiter}'
     """.format(file=file, table=table, delimiter=delimiter))
@@ -31,4 +31,4 @@ def to_upper(value):
 
 
 def get_engine():
-    return create_engine('mysql://tpcdi:@localhost/tpcdi')
+    return create_engine('mysql://tpcdi:pA2sw@rd@localhost/tpcdi')

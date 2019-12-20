@@ -4,7 +4,6 @@ from datetime import datetime
 from glob import glob
 
 import pandas as pd
-from tqdm import tqdm_notebook as tqdm
 
 from utils.utils import data_folder_path, get_engine
 
@@ -64,7 +63,7 @@ def load(conn):
     
     dim_security = defaultdict(list)
     
-    for file in tqdm(sorted(glob(data_folder_path + 'FINWIRE*'))):
+    for file in sorted(glob(data_folder_path + 'FINWIRE*')):
         if '_audit' in file:
             continue
         with open(file, 'r') as f:
@@ -104,10 +103,7 @@ def load(conn):
                 security['SK_CompanyID'] = str(res[0])
                 dim_security[security["Symbol"]].append(security)
     
-    cur.close()
-    conn.close()
-    
-    for CIK, entries in tqdm(dim_security.items()):
+    for CIK, entries in dim_security.items():
         for (old, new) in zip(entries, entries[1:] + [None]):
             if not new:
                 old['IsCurrent'] = '1'
@@ -115,7 +111,7 @@ def load(conn):
                 continue
             old['EndDate'] = new['EffectiveDate']
     
-    for CIK, entries in tqdm(dim_security.items()):
+    for CIK, entries in dim_security.items():
         for entry in entries:
             df_security = df_security.append(entry, ignore_index=True)
     
@@ -123,6 +119,6 @@ def load(conn):
     df_security.to_sql("DimSecurity", index=False, if_exists="append", con=get_engine())
     
     logging.info("Adding index to table")
-    cur.execut("ALTER TABLE DimSecurity ADD INDEX(Symbol, EffectiveDate, EndDate);")
+    cur.execute("ALTER TABLE DimSecurity ADD INDEX(Symbol, EffectiveDate, EndDate);")
     
     conn.commit()

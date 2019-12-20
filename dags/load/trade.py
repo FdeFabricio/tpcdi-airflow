@@ -48,7 +48,7 @@ def load(conn):
     df_merged["Type"] = df_merged["T_TT_ID"].apply(lambda x: trade_types[x])
     
     logging.info("Applying updates")
-    df_merged = df_merged.head(1000).groupby("T_ID").parallel_apply(group_updates)
+    df_merged = df_merged.groupby("T_ID").parallel_apply(group_updates)
     
     df_merged.rename(columns={
         "T_ID": "TradeID", "T_IS_CASH": "CashFlag", "T_QTY": "Quantity", "T_BID_PRICE": "BidPrice",

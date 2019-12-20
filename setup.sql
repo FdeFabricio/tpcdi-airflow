@@ -58,6 +58,32 @@ CREATE TABLE DimBroker  (
 
 -- -----------------------------------------------------------------------
 
+DROP TABLE IF EXISTS DimCompany;
+CREATE TABLE DimCompany (
+    SK_CompanyID NUMERIC(11) NOT NULL PRIMARY KEY,
+    CompanyID NUMERIC(11) NOT NULL,
+    Status CHAR(10) NOT NULL,
+    Name CHAR(60) NOT NULL,
+    Industry CHAR(50) NOT NULL,
+    SPrating CHAR(4),
+    isLowGrade BOOLEAN,
+    CEO CHAR(100) NOT NULL,
+    AddressLine1 CHAR(80),
+    AddressLine2 CHAR(80),
+    PostalCode CHAR(12) NOT NULL,
+    City CHAR(25) NOT NULL,
+    StateProv CHAR(20) NOT NULL,
+    Country CHAR(24),
+    Description CHAR(150) NOT NULL,
+    FoundingDate DATE,
+    IsCurrent BOOLEAN NOT NULL,
+    BatchID numeric(5) NOT NULL,
+    EffectiveDate DATE NOT NULL,
+    EndDate DATE NOT NULL
+);
+
+-- -----------------------------------------------------------------------
+
 DROP TABLE IF EXISTS DimCustomer;
 CREATE TABLE DimCustomer (
     SK_CustomerID NUMERIC(11) NOT NULL PRIMARY KEY,
@@ -475,6 +501,15 @@ delimiter ;
 
 -- -----------------------------------------------------------------------
 
+DROP TABLE IF EXISTS Industry;
+CREATE TABLE Industry (
+    IN_ID CHAR(2) NOT NULL,
+    IN_NAME CHAR(50) NOT NULL,
+    IN_SC_ID CHAR(4) NOT NULL
+);
+
+-- -----------------------------------------------------------------------
+
 DROP TABLE IF EXISTS Prospect;
 CREATE TABLE Prospect(
     AgencyID CHAR(30) NOT NULL,
@@ -576,3 +611,32 @@ BEGIN
 END;
 $$
 delimiter ;
+
+-- -----------------------------------------------------------------------
+
+DROP TABLE IF EXISTS StatusType;
+CREATE TABLE StatusType (
+    ST_ID CHAR(4) NOT NULL,
+    ST_NAME CHAR(10) NOT NULL
+);
+
+-- -----------------------------------------------------------------------
+
+DROP TABLE IF EXISTS TaxRate;
+CREATE TABLE TaxRate (
+    TX_ID CHAR(4) NOT NULL,
+    TX_NAME CHAR(50) NOT NULL,
+    TX_RATE NUMERIC(6,5) NOT NULL
+);
+
+-- -----------------------------------------------------------------------
+
+DROP TABLE IF EXISTS TradeType;
+CREATE TABLE TradeType (
+    TT_ID CHAR(3) NOT NULL,
+    TT_NAME CHAR(12) NOT NULL,
+    TT_IS_SELL NUMERIC(1) NOT NULL,
+    TT_IS_MRKT NUMERIC(1) NOT NULL
+);
+
+-- -----------------------------------------------------------------------

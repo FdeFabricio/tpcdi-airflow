@@ -1,18 +1,11 @@
 import logging
-from utils.utils import bulk_load
+import pandas as pd
+from utils.utils import bulk_load, data_folder_path, get_engine
 
-file_path = 'data/Batch1/TradeType.txt'
+file_path = data_folder_path + "TradeType.txt"
 
-def load(conn):
+
+def load():
     logging.info("Begin TradeType - Historical Load")
-    cur = conn.cursor()
-    cur.execute("""
-      DROP TABLE IF EXISTS TradeType;
-        CREATE TABLE TradeType ( TT_ID CHAR(3) Not NULL,
-                                    TT_NAME CHAR(12) Not NULL,
-                                    TT_IS_SELL numeric(1) Not NULL,
-                                    TT_IS_MRKT numeric(1) Not NULL
-        );
-    """)
-
-    bulk_load(conn, 'TradeType', file_path, '|')
+    df = pd.read_csv(file_path, sep="|", names=["TT_ID", "TT_NAME", "TT_IS_SELL", "TT_IS_MRKT"])
+    df.to_sql("TradeType", index=False, if_exists="append", con=get_engine())

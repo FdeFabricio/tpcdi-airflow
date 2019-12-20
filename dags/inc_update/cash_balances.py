@@ -25,7 +25,7 @@ def load(conn):
     df_fact["SK_DateID"] = 0
     df_fact["Cash"] = 0
     
-    logging.info("Inserting into MySQL")
+    logging.info("Incrementally updating into MySQL")
     df_fact.to_sql("FactCashBalances", index=False, if_exists="append", con=get_engine())
     
     logging.info("Dropping auxiliary columns")

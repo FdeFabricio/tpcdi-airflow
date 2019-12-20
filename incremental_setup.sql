@@ -37,3 +37,29 @@ BEGIN
 END;
 $$
 delimiter ;
+
+-- ---------------------------------------------------------------------
+
+DROP TRIGGER IF EXISTS tpcdi.INC_FactHoldings;
+delimiter $$
+CREATE TRIGGER `INC_FactHoldings` BEFORE INSERT ON `FactHoldings`
+FOR EACH ROW
+BEGIN
+    DECLARE _customerID, _accountID, _securityID, _companyID, _dateID, _timeID NUMERIC(11);
+    DECLARE _price NUMERIC(8,2);
+
+    SELECT DimTrade.SK_CustomerID, DimTrade.SK_AccountID, DimTrade.SK_SecurityID, DimTrade.SK_CompanyID, DimTrade.SK_CloseDateID, DimTrade.SK_CloseTimeID, DimTrade.TradePrice
+    INTO @_customerID, @_accountID, @_securityID, @_companyID, @_dateID, @_timeID, @_price
+    FROM DimTrade
+    WHERE NEW.TradeID = DimTrade.TradeID;
+
+    SET NEW.SK_CustomerID = @_customerID;
+    SET NEW.SK_AccountID = @_accountID;
+    SET NEW.SK_SecurityID = @_securityID;
+    SET NEW.SK_CompanyID = @_companyID;
+    SET NEW.SK_DateID = @_dateID;
+    SET NEW.SK_TimeID = @_timeID;
+    SET NEW.CurrentPrice = @_price;
+END;
+$$
+delimiter ;

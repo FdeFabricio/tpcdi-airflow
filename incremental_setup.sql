@@ -170,3 +170,43 @@ BEGIN
 END;
 $$
 delimiter ;
+
+
+-- -----------------------------------------------------------------------
+ALTER TABLE tpcdi.FactWatches ADD COLUMN (
+    CustomerID NUMERIC(11),
+    Symbol CHAR(15),
+    Date DATE,
+    DateRemoved DATE
+);
+
+DROP TRIGGER IF EXISTS tpcdi.INC_FactWatches;
+delimiter $$
+CREATE TRIGGER `INC_FactWatches` BEFORE INSERT ON `FactWatches`
+FOR EACH ROW
+BEGIN
+    SET NEW.SK_CustomerID = (
+        SELECT DimCustomer.SK_CustomerID
+        FROM DimCustomer
+        WHERE DimCustomer.CustomerID = NEW.CustomerID AND
+            DimCustomer.IsCurrent = 1
+    );
+    SET NEW.SK_SecurityID = (
+        SELECT DimSecurity.SK_SecurityID
+        FROM DimSecurity
+        WHERE DimSecurity.Symbol = NEW.Symbol AND
+            DimSecurity.IsCurrent = 1
+    );
+    SET NEW.SK_DateID_DatePlaced = (
+        SELECT DimDate.SK_DateID
+        FROM DimDate
+        WHERE DimDate.DateValue = NEW.Date
+    );
+    SET NEW.SK_DateID_DateRemoved = (
+        SELECT DimDate.SK_DateID
+        FROM DimDate
+        WHERE DimDate.DateValue = NEW.DateRemoved
+    );
+END;
+$$
+delimiter ;

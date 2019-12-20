@@ -3,8 +3,8 @@ from airflow.hooks.mysql_hook import MySqlHook
 from airflow.operators.python_operator import PythonOperator
 from pandarallel import pandarallel
 
-from load import account, audit, broker, cash_balances, company, customer, date, financial, holdings, industry, \
-    market_history, prospect, security, status_type, tax_rate, time, trade, trade_type, watches
+from load import account, audit, broker, cash_balances, company, customer, date, di_messages, financial, holdings, \
+    industry, market_history, prospect, security, status_type, tax_rate, time, trade, trade_type, watches
 
 args = {
     'owner': 'airflow',
@@ -150,17 +150,34 @@ trade_type = PythonOperator(
     python_callable=trade_type.load,
     dag=dag)
 
+start = PythonOperator(
+    task_id='Start',
+    provide_context=False,
+    python_callable=di_messages.record_start,
+    op_kwargs={'conn': conn, 'batch_id': 1},
+    dag=dag)
+
+end = PythonOperator(
+    task_id='End',
+    provide_context=False,
+    python_callable=di_messages.record_end,
+    op_kwargs={'conn': conn, 'batch_id': 1},
+    dag=dag)
+
+# start
+# start
+
 # first phase
-# audit
-# industry
-# status_type
-# tax_rate
-# trade_type
-# dim_date
-# dim_time
-# dim_broker
-# dim_customer
-# dim_company
+audit << start
+industry << start
+status_type << start
+tax_rate << start
+trade_type << start
+dim_date << start
+dim_time << start
+dim_broker << start
+dim_customer << start
+dim_company << start
 
 # second phase
 dim_account << dim_broker
@@ -187,3 +204,6 @@ fact_watches << dim_date
 
 # fourth phase
 fact_holdings << dim_trade
+
+# end
+end << fact_holdings

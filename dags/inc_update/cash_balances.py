@@ -13,11 +13,11 @@ def load(conn):
     
     # needs to execute setup.sql first
     df_ = pd.read_csv(file_path, sep="|", parse_dates={"TS": ["CT_DTS"]}, keep_date_col=True,
-                      names=["CDC_FLAG","CDC_DSN","CT_CA_ID", "CT_DTS", "CT_AMT", "CT_NAME"])
-    df_['Date']=df_['TS'].dt.date
+                      names=["CDC_FLAG", "CDC_DSN", "CT_CA_ID", "CT_DTS", "CT_AMT", "CT_NAME"])
+    df_['Date'] = df_['TS'].dt.date
     
     df_fact = pd.DataFrame(columns=["SK_CustomerID", "SK_AccountID", "SK_DateID", "Cash", "BatchID"])
-    df_fact [['CT_CA_ID', 'Date','DayTotal']] = df_.groupby(['CT_CA_ID', 'Date'])[['CT_AMT']].sum().reset_index()
+    df_fact[['CT_CA_ID', 'Date', 'DayTotal']] = df_.groupby(['CT_CA_ID', 'Date'])[['CT_AMT']].sum().reset_index()
     
     df_fact["BatchID"] = 2
     df_fact["SK_CustomerID"] = 0
@@ -33,6 +33,5 @@ def load(conn):
     cur.execute("ALTER TABLE FactCashBalances DROP COLUMN CT_CA_ID;")
     cur.execute("ALTER TABLE FactCashBalances DROP COLUMN date;")
     cur.execute("ALTER TABLE FactCashBalances DROP COLUMN DayTotal;")
-
     
     conn.commit()

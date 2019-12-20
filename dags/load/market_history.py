@@ -38,9 +38,11 @@ def load(conn):
     df_52 = get_52_weeks_data(df_)
     df_fact = pd.merge(df_fact, df_52, on=["Date", "Symbol"])
     
-    df_fact["quarter"] = df_fact["Date"].apply(lambda x: 1 + (x.month - 1) // 3)
-    df_fact["year"] = df_fact["Date"].apply(lambda x: x.year)
-    df_fact = df_fact.apply(get_previous_quarters, axis=1)
+    logging.info("Applying transformations")
+    df_fact["quarter"] = df_fact["Date"].parallel_apply(lambda x: 1 + (x.month - 1) // 3)
+    df_fact["year"] = df_fact["Date"].parallel_apply(lambda x: x.year)
+    df_fact = df_fact.parallel_apply(get_previous_quarters, axis=1)
+    
     df_fact.drop("quarter", inplace=True, axis=1)
     df_fact.drop("year", inplace=True, axis=1)
     

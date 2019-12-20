@@ -5,6 +5,8 @@ from sqlalchemy import create_engine
 
 data_folder_path = "data/Batch1/"
 
+inc_data_folder_path="data/Batch2/"
+
 
 def bulk_load(conn, table, file, delimiter):
     cur = conn.cursor()

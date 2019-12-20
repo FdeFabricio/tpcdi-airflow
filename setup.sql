@@ -569,8 +569,8 @@ delimiter ;
 
 DROP TABLE IF EXISTS FactCashBalances;
 CREATE TABLE FactCashBalances ( 
-	SK_cID NUMERIC(11) NOT NULL REFERENCES DimCustomer (SK_cID),
-	SK_aID NUMERIC(11) NOT NULL REFERENCES DimAccount (SK_aID),
+	SK_CustomerID NUMERIC(11) NOT NULL REFERENCES DimCustomer (SK_CustomerID),
+	SK_AccountID NUMERIC(11) NOT NULL REFERENCES DimAccount (SK_AccountID),
 	SK_DateID NUMERIC(11) NOT NULL REFERENCES DimDate (SK_DateID),
 	Cash NUMERIC(15,2) NOT NULL,
 	BatchID NUMERIC(5),
@@ -587,15 +587,15 @@ FOR EACH ROW
 BEGIN
 	DECLARE _cID, _aID NUMERIC(11);
 
-	SELECT DimAccount.SK_cID, DimAccount.SK_aID
+	SELECT DimAccount.SK_CustomerID, DimAccount.SK_AccountID
 	INTO @_cID, @_aID
 	FROM DimAccount
 	WHERE DimAccount.AccountID = NEW.CT_CA_ID AND
 	NEW.Date >= DimAccount.EffectiveDate AND
 	NEW.Date < DimAccount.EndDate;
 	
-	SET NEW.SK_cID = @_cID;
-	SET NEW.SK_aID = @_aID;	
+	SET NEW.SK_CustomerID = @_cID;
+	SET NEW.SK_AccountID = @_aID;	
 	
 	SET NEW.SK_DateID = (
 		SELECT DimDate.SK_DateID
@@ -606,7 +606,7 @@ BEGIN
 	SET NEW.Cash = NEW.DayTotal + IFNULL((
 		SELECT FactCashBalances.Cash
 		FROM FactCashBalances
-		WHERE NEW.SK_aID = FactCashBalances.SK_aID
+		WHERE NEW.SK_AccountID = FactCashBalances.SK_AccountID
 		ORDER BY SK_DateID DESC
 		LIMIT 1
 	),0);

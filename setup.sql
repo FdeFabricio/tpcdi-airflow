@@ -226,6 +226,18 @@ delimiter ;
 
 -------------------------------------------------------------------------
 
+DROP TABLE IF EXISTS DImessages;
+CREATE TABLE DImessages (
+    MessageDateAndTime TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    BatchID NUMERIC(5) NOT NULL,
+    MessageSource CHAR(30),
+    MessageText CHAR(50) NOT NULL,
+    MessageType CHAR(12) NOT NULL,
+    MessageData CHAR(100)
+);
+
+-------------------------------------------------------------------------
+
 DROP TABLE IF EXISTS FactHoldings;
 CREATE TABLE FactHoldings (
     TradeID NUMERIC(11) NOT NULL,

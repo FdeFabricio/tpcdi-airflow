@@ -53,7 +53,8 @@ def load():
         'Name': [False, 'CompanyName'],
         'Industry': [True, 'industries[record[\'IndustryID\']]'],
         'SPrating': [False, 'SPrating'],
-        'isLowGrade': [True, '\'0\' if record[\'SPrating\'] and (record[\'SPrating\'].startswith(\'A\') or record[\'SPrating\'].startswith(\'BBB\')) else \'1\''],
+        'isLowGrade': [True,
+                       '\'0\' if record[\'SPrating\'] and (record[\'SPrating\'].startswith(\'A\') or record[\'SPrating\'].startswith(\'BBB\')) else \'1\''],
         'CEO': [False, 'CEOname'],
         'AddressLine1': [False, 'AddrLine1'],
         'AddressLine2': [False, 'AddrLine2'],
@@ -62,13 +63,15 @@ def load():
         'StateProv': [False, 'StateProvince'],
         'Country': [False, 'Country'],
         'Description': [False, 'Description'],
-        'FoundingDate': [True, 'datetime.strptime(record[\'FoundingDate\'].split(\'-\')[0], \'%Y%m%d\').strftime(\'%Y-%m-%d\')'],
+        'FoundingDate': [True,
+                         'datetime.strptime(record[\'FoundingDate\'].split(\'-\')[0], \'%Y%m%d\').strftime(\'%Y-%m-%d\')'],
         'IsCurrent': [True, '\'0\''],
         'BatchID': [True, '\'0\''],
         'EffectiveDate': [True, 'datetime.strptime(record[\'PTS\'], \'%Y%m%d-%H%M%S\').strftime(\'%Y-%m-%d\')'],
         'EndDate': [True, 'None']
     }
-    
+    df_messages = pd.DataFrame(
+        columns=["MessageDateAndTime", "BatchID", "MessageSource", "MessageText", "MessageType", "MessageData"])
     dim_companies = defaultdict(list)
     
     for file in tqdm(sorted(glob(data_folder_path + "FINWIRE*"))):
@@ -94,6 +97,17 @@ def load():
                         except (ValueError, SyntaxError):
                             company[k] = np.nan
                 
+                if not is_SPRating_valid(company["SPrating"]):
+                    df_messages = df_messages.append({
+                        "BatchID": 1,
+                        "MessageSource": "DimCompany",
+                        "MessageType": "Alert",
+                        "MessageText": "Invalid SPRating",
+                        "MessageData": "CO_ID = " + company["CompanyID"] + ", CO_SP_RATE = " + company["SPrating"]
+                    })
+                    company["SPRating"] = np.nan
+                    company["isLowGrade"] = np.nan
+                
                 dim_companies[record['CIK']].append(company)
     
     for CIK, entries in tqdm(dim_companies.items()):
@@ -111,3 +125,8 @@ def load():
     
     df_companies["SK_CompanyID"] = df_companies.index
     df_companies.to_sql("DimCompany", index=False, if_exists="append", con=get_engine())
+    df_messages.to_sql("DImessages", index=False, if_exists="append", con=get_engine())
+
+
+def is_SPRating_valid(value):
+    return value in ["AAA", "AA[+/-]", "A[+/-]", "BBB[+/-]", "BB[+/-]", "B[+/-]", "CCC[+/-]", "CC", "C", "D"]

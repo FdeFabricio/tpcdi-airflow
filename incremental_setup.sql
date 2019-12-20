@@ -210,3 +210,60 @@ BEGIN
 END;
 $$
 delimiter ;
+
+
+-- -----------------------------------------------------------------------
+
+ALTER TABLE tpcdi.Prospect ADD COLUMN (
+    Date DATE
+    ProspectKey CHAR(232)
+);
+
+DROP TRIGGER IF EXISTS tpcdi.UPDATE_Prospect_DateID
+delimiter $$
+CREATE TRIGGER `UPDATE_Prospect_DateID` BEFORE UPDATE ON `Prospect`
+FOR EACH ROW
+BEGIN
+	DECLARE _date_id NUMERIC(11);
+	
+	SELECT DimDate.SK_DateID INTO @_date_id FROM DimDate WHERE DimDate.DateValue = NEW.Date;
+    SET NEW.SK_RecordDateID = @_date_id;
+	
+    SET NEW.SK_UpdateDateID = @_date_id;
+    IF EXISTS (
+        SELECT SK_CustomerID
+        FROM DimCustomer WHERE Status = "ACTIVE" AND ProspectKey = NEW.ProspectKey
+    ) THEN
+       SET NEW.IsCustomer = TRUE;
+    ELSE
+        SET NEW.IsCustomer = FALSE;
+    END IF;
+END;
+$$
+delimiter ;
+		
+
+DROP TRIGGER IF EXISTS tpcdi.ADD_Prospect_DateID;
+delimiter $$
+CREATE TRIGGER `ADD_Prospect_DateID` BEFORE INSERT ON `Prospect`
+FOR EACH ROW
+BEGIN
+    DECLARE _date_id NUMERIC(11);
+	
+    SELECT DimDate.SK_DateID INTO @_date_id FROM DimDate WHERE DimDate.DateValue = NEW.Date;
+    SET NEW.SK_RecordDateID = @_date_id;
+	
+    SET NEW.SK_UpdateDateID = @_date_id;
+    IF EXISTS (
+        SELECT SK_CustomerID
+        FROM DimCustomer WHERE Status = "ACTIVE" AND ProspectKey = NEW.ProspectKey
+    ) THEN
+       SET NEW.IsCustomer = TRUE;
+    ELSE
+        SET NEW.IsCustomer = FALSE;
+    END IF;
+END;
+$$
+delimiter ;
+
+-- -----------------------------------------------------------------------

@@ -50,13 +50,3 @@ def load(conn):
     cur.execute("ALTER TABLE FactWatches DROP COLUMN Symbol;")
     cur.execute("ALTER TABLE FactWatches DROP COLUMN Date;")
     cur.execute("ALTER TABLE FactWatches DROP COLUMN DateRemoved;")
-
-import MySQLdb
-def main():
-    conn = MySQLdb.connect(host='127.0.0.1',  user='root', passwd='002002', db='tpcdi', local_infile=True)
-    load(conn)
-    #load()
-
-
-if __name__ == '__main__':
-    main()

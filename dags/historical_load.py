@@ -47,7 +47,7 @@ dim_customer = PythonOperator(
     task_id='DimCustomer',
     provide_context=False,
     python_callable=customer.load,
-    op_kwargs={'conn': conn},
+    op_kwargs={'conn': conn, 'ds': "{{ ds }}"},
     dag=dag)
 
 dim_company = PythonOperator(

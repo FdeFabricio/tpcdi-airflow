@@ -65,9 +65,9 @@ def load(conn):
 
 
 def get_52_weeks_data(df):
-    oie = df.groupby("DM_S_SYMB").rolling('365D', on="Date").agg({"DM_HIGH": "max", "DM_LOW": "min"})
-    ola = oie.reset_index()
-    return ola.rename(columns={"DM_S_SYMB": "Symbol", "DM_HIGH": "FiftyTwoWeekHigh", "DM_LOW": "FiftyTwoWeekLow"})
+    df_grouped = df.groupby("DM_S_SYMB").rolling('365D', on="Date").agg({"DM_HIGH": "max", "DM_LOW": "min"})
+    df_grouped = df_grouped.reset_index()
+    return df_grouped.rename(columns={"DM_S_SYMB": "Symbol", "DM_HIGH": "FiftyTwoWeekHigh", "DM_LOW": "FiftyTwoWeekLow"})
 
 
 def get_previous_quarters(row):

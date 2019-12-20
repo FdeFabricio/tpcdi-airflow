@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime, date
 
 import numpy as np
 import pandas as pd
@@ -14,7 +15,7 @@ prospect_file_path = data_folder_path + "Prospect.csv"
 NULL = ""
 
 
-def load(conn):
+def load(conn, ds):
     cur = conn.cursor()
     tax_rate = get_tax_rate()
     df_prospect = get_prospect_df()
@@ -25,6 +26,9 @@ def load(conn):
                  "Phone3", "Email1", "Email2", "NationalTaxRateDesc", "NationalTaxRate", "LocalTaxRateDesc",
                  "LocalTaxRate", "AgencyID", "CreditRating", "NetWorth", "MarketingNameplate", "IsCurrent", "BatchID",
                  "EffectiveDate", "EndDate"])
+    
+    df_messages = pd.DataFrame(
+        columns=["MessageDateAndTime", "BatchID", "MessageSource", "MessageText", "MessageType", "MessageData"])
     
     updates = {}
     
@@ -92,6 +96,28 @@ def load(conn):
                 if row["CustomerID"] not in updates:
                     updates[row["CustomerID"]] = []
                 updates[row["CustomerID"]].append(row)
+            
+            if row["Tier"] not in ["1", "2", "3"]:
+                df_messages = df_messages.append({
+                    "BatchID": 1,
+                    "MessageSource": "DimCustomer",
+                    "MessageType": "Alert",
+                    "MessageText": "Invalid customer tier",
+                    "MessageData": "C_ID = " + row["CustomerID"] + ", C_TIER = " + row["Tier"]
+                })
+            
+            batch_date = datetime.strptime(ds, "%Y-%m-%d").date()
+            min_date = date(batch_date.year - 100, batch_date.month, batch_date.day)
+            dbo = datetime.strftime(row["DBO"], "%Y-%m-%d").date()
+            
+            if dbo < min_date or dbo > batch_date:
+                df_messages = df_messages.append({
+                    "BatchID": 1,
+                    "MessageSource": "DimCustomer",
+                    "MessageType": "Alert",
+                    "MessageText": "DOB out of range",
+                    "MessageData": "C_ID = " + row["CustomerID"] + ", C_DOB = " + row["DBO"]
+                })
         
         elif action_type == "INACT":
             customer_id = customer.attrib.get('C_ID', None)
@@ -137,7 +163,8 @@ def load(conn):
     
     logging.info("Inserting into MySQL")
     df_customers.to_sql("DimCustomer", index=False, if_exists="append", con=get_engine())
-
+    df_messages.to_sql("DImessages", index=False, if_exists="append", con=get_engine())
+    
     logging.info("Adding index to table")
     cur.execut("ALTER TABLE DimCustomer ADD INDEX(CustomerID, EndDate, EffectiveDate);")
     conn.commit()

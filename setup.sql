@@ -404,6 +404,11 @@ BEGIN
               (Financial.FI_YEAR = NEW.prev4_year AND Financial.FI_QTR = NEW.prev4_quarter ))
     );
 
+    IF (NEW.PERatio IS NULL) THEN
+        INSERT INTO DImessages (BatchID, MessageSource, MessageText, MessageType, MessageData)
+        VALUES (1, "FactMarketHistory", "No earnings for company", "Alert", CONCAT("DM_S_SYMB = ", NEW.Symbol));
+    END IF;
+
     SET NEW.Yield = @_dividend * 100 / NEW.ClosePrice;
 END;
 $$

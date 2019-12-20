@@ -55,6 +55,7 @@ def load(conn):
     
     logging.info("Reading input file")
     df_financial = pd.DataFrame()
+    financials = []
     for file in sorted(glob(data_folder_path + "FINWIRE*")):
         if '_audit' in file:
             continue
@@ -83,10 +84,11 @@ def load(conn):
                             financial[k] = eval(v[1])
                         except (ValueError, SyntaxError):
                             financial[k] = np.nan
-                
                 financial['SK_CompanyID'] = 0  # value set by trigger
-                df_financial = df_financial.append(financial, ignore_index=True)
+                financials.append(financial)
     
+    df_financial = df_financial.append(financials, ignore_index=True)
+    df_financial.to_csv("financial.txt", index=False)
     logging.info("Inserting into MySQL")
     df_financial.to_sql("Financial", index=False, if_exists="append", con=get_engine())
     

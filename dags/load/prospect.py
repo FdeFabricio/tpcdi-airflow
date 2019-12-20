@@ -50,13 +50,13 @@ def load(conn, ds):
         pd.notna(row["PostalCode"]) and str(row["PostalCode"]) or NULL]), axis=1)
     df_prospect["ProspectKey"] = df_prospect["ProspectKey"].apply(lambda x: x.upper())
     
-    df_message = pd.DataFrame({
+    df_message = pd.DataFrame([{
         "MessageSource": "Prospect",
         "MessageText": "Inserted rows",
         "MessageData": len(df_prospect),
         "MessageType": "Status",
         "BatchID": 1,
-    })
+    }])
     
     logging.info("Inserting into MySQL")
     df_prospect.to_sql("Prospect", index=False, if_exists="append", con=get_engine())

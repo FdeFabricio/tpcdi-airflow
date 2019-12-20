@@ -88,7 +88,7 @@ def load(conn):
                 financials.append(financial)
     
     df_financial = df_financial.append(financials, ignore_index=True)
-    df_financial.to_csv("financial.txt", index=False)
+    
     logging.info("Inserting into MySQL")
     df_financial.to_sql("Financial", index=False, if_exists="append", con=get_engine())
     

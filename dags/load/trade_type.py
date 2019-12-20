@@ -1,6 +1,8 @@
 import logging
+
 import pandas as pd
-from utils.utils import bulk_load, data_folder_path, get_engine
+
+from utils.utils import data_folder_path, get_engine
 
 file_path = data_folder_path + "TradeType.txt"
 

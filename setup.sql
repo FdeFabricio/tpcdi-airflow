@@ -569,15 +569,15 @@ delimiter ;
 
 DROP TABLE IF EXISTS FactCashBalances;
 CREATE TABLE FactCashBalances ( 
-	SK_CustomerID NUMERIC(11) NOT NULL REFERENCES DimCustomer (SK_CustomerID),
-	SK_AccountID NUMERIC(11) NOT NULL REFERENCES DimAccount (SK_AccountID),
-	SK_DateID NUMERIC(11) NOT NULL REFERENCES DimDate (SK_DateID),
-	Cash NUMERIC(15,2) NOT NULL,
-	BatchID NUMERIC(5),
-	
-	CT_CA_ID NUMERIC (11) NOT NULL,
-	Date date NOT NULL,
-	DayTotal NUMERIC (15,2) NOT NULL
+    SK_CustomerID NUMERIC(11) NOT NULL REFERENCES DimCustomer (SK_CustomerID),
+    SK_AccountID NUMERIC(11) NOT NULL REFERENCES DimAccount (SK_AccountID),
+    SK_DateID NUMERIC(11) NOT NULL REFERENCES DimDate (SK_DateID),
+    Cash NUMERIC(15,2) NOT NULL,
+    BatchID NUMERIC(5),
+
+    CT_CA_ID NUMERIC (11) NOT NULL,
+    Date date NOT NULL,
+    DayTotal NUMERIC (15,2) NOT NULL
 );
 
 DROP TRIGGER IF EXISTS tpcdi.ADD_FactCashBalances;
@@ -585,31 +585,31 @@ delimiter $$
 CREATE TRIGGER `ADD_FactCashBalances` BEFORE INSERT ON `FactCashBalances`
 FOR EACH ROW
 BEGIN
-	DECLARE _cID, _aID NUMERIC(11);
+    DECLARE _cID, _aID NUMERIC(11);
 
-	SELECT DimAccount.SK_CustomerID, DimAccount.SK_AccountID
-	INTO @_cID, @_aID
-	FROM DimAccount
-	WHERE DimAccount.AccountID = NEW.CT_CA_ID AND
-	NEW.Date >= DimAccount.EffectiveDate AND
-	NEW.Date < DimAccount.EndDate;
-	
-	SET NEW.SK_CustomerID = @_cID;
-	SET NEW.SK_AccountID = @_aID;	
-	
-	SET NEW.SK_DateID = (
-		SELECT DimDate.SK_DateID
-		FROM DimDate
-		WHERE DimDate.DateValue = NEW.Date
-	);
-	
-	SET NEW.Cash = NEW.DayTotal + IFNULL((
-		SELECT FactCashBalances.Cash
-		FROM FactCashBalances
-		WHERE NEW.SK_AccountID = FactCashBalances.SK_AccountID
-		ORDER BY SK_DateID DESC
-		LIMIT 1
-	),0);
+    SELECT DimAccount.SK_CustomerID, DimAccount.SK_AccountID
+    INTO @_cID, @_aID
+    FROM DimAccount
+    WHERE DimAccount.AccountID = NEW.CT_CA_ID AND
+    NEW.Date >= DimAccount.EffectiveDate AND
+    NEW.Date < DimAccount.EndDate;
+
+    SET NEW.SK_CustomerID = @_cID;
+    SET NEW.SK_AccountID = @_aID;
+
+    SET NEW.SK_DateID = (
+        SELECT DimDate.SK_DateID
+        FROM DimDate
+        WHERE DimDate.DateValue = NEW.Date
+    );
+
+    SET NEW.Cash = NEW.DayTotal + IFNULL((
+        SELECT FactCashBalances.Cash
+        FROM FactCashBalances
+        WHERE NEW.SK_AccountID = FactCashBalances.SK_AccountID
+        ORDER BY SK_DateID DESC
+        LIMIT 1
+    ),0);
 END;
 $$
 delimiter ;

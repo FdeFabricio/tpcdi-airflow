@@ -10,7 +10,6 @@ from utils.utils import data_folder_path, get_engine
 
 status_type_file_path = data_folder_path + "StatusType.txt"
 industry_file_path = data_folder_path + "Industry.txt"
-tmp_file_path = data_folder_path + "dimCompany.txt"
 datetime.date  # force datetime import
 
 

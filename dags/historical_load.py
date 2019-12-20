@@ -3,8 +3,8 @@ from airflow.hooks.mysql_hook import MySqlHook
 from airflow.operators.python_operator import PythonOperator
 from pandarallel import pandarallel
 
-from load import account, audit, broker, company, customer, date, financial, holdings, industry, prospect, security, status_type, \
-    tax_rate, time, trade, trade_type, watches
+from load import account, audit, broker, cash_balances, company, customer, date, financial, holdings, industry, \
+    market_history, prospect, security, status_type, tax_rate, time, trade, trade_type, watches
 
 args = {
     'owner': 'airflow',
@@ -84,10 +84,10 @@ dim_trade = PythonOperator(
     op_kwargs={'conn': conn},
     dag=dag)
 
-fact_watches = PythonOperator(
-    task_id='FactWatches',
+fact_cash_balances = PythonOperator(
+    task_id='FactCashBalances',
     provide_context=False,
-    python_callable=watches.load,
+    python_callable=cash_balances.load,
     op_kwargs={'conn': conn},
     dag=dag)
 
@@ -95,6 +95,20 @@ fact_holdings = PythonOperator(
     task_id='FactHoldings',
     provide_context=False,
     python_callable=holdings.load,
+    op_kwargs={'conn': conn},
+    dag=dag)
+
+fact_market_history = PythonOperator(
+    task_id='FactMarketHistory',
+    provide_context=False,
+    python_callable=market_history.load,
+    op_kwargs={'conn': conn},
+    dag=dag)
+
+fact_watches = PythonOperator(
+    task_id='FactWatches',
+    provide_context=False,
+    python_callable=watches.load,
     op_kwargs={'conn': conn},
     dag=dag)
 
@@ -136,7 +150,6 @@ trade_type = PythonOperator(
     python_callable=trade_type.load,
     dag=dag)
 
-
 # first phase
 # audit
 # industry
@@ -162,12 +175,12 @@ dim_trade << dim_account
 dim_trade << dim_date
 dim_trade << dim_security
 dim_trade << dim_time
-# fact_cash_balance << dim_account
-# fact_cash_balance << dim_date
-# fact_cash_balance << dim_time
-# fact_market_history << dim_date
-# fact_market_history << dim_security
-# fact_market_history << financial
+fact_cash_balances << dim_account
+fact_cash_balances << dim_date
+fact_cash_balances << dim_time
+fact_market_history << dim_date
+fact_market_history << dim_security
+fact_market_history << financial
 fact_watches << dim_customer
 fact_watches << dim_security
 fact_watches << dim_date

@@ -31,4 +31,4 @@ def to_upper(value):
 
 
 def get_engine():
-    return create_engine('mysql://root:password@localhost/tpcdi')
+    return create_engine('mysql://tpcdi:@localhost/tpcdi')

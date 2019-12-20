@@ -9,6 +9,7 @@ date_file_path = data_folder_path + "Date.txt"
 
 
 def load(conn):
+    logging.info("Begin DimBroker - Historical Load")
     cur = conn.cursor()
     min_date = pd.read_csv(date_file_path, header=None, delimiter="|")[1].min()
     df = pd.read_csv(file_path,

@@ -1,10 +1,12 @@
+import logging
 from utils.utils import bulk_load
 
 file_path = 'data/Batch1/TaxRate.txt'
 
 
 def load(conn):
-    cur = conn.cursor()    
+    logging.info("Begin TaxRate - Historical Load")
+    cur = conn.cursor()
     cur.execute("""
       DROP TABLE IF EXISTS TaxRate;
         CREATE TABLE TaxRate ( TX_ID CHAR(4) Not NULL,
@@ -15,4 +17,3 @@ def load(conn):
 
     bulk_load(conn, 'TaxRate', file_path, '|')
 
-    

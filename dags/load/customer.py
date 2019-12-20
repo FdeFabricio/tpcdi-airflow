@@ -16,6 +16,7 @@ NULL = ""
 
 
 def load(conn, ds):
+    logging.info("Begin DimCustomer - Historical Load")
     cur = conn.cursor()
     tax_rate = get_tax_rate()
     df_prospect = get_prospect_df()

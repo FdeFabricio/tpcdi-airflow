@@ -1,9 +1,11 @@
+import logging
 from utils.utils import bulk_load
 
 file_path = 'data/Batch1/TradeType.txt'
 
 def load(conn):
-    cur = conn.cursor()    
+    logging.info("Begin TradeType - Historical Load")
+    cur = conn.cursor()
     cur.execute("""
       DROP TABLE IF EXISTS TradeType;
         CREATE TABLE TradeType ( TT_ID CHAR(3) Not NULL,

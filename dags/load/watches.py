@@ -7,6 +7,7 @@ file_watch_history = data_folder_path + "WatchHistory.txt"
 
 
 def load(conn):
+    logging.info("Begin FactWatches - Historical Load")
     cur = conn.cursor()
     
     # needs to execute setup.sql first

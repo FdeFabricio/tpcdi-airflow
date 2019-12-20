@@ -8,6 +8,7 @@ file_path = data_folder_path + "CashTransaction.txt"
 
 
 def load(conn):
+    logging.info("Begin FactCashBalances - Historical Load")
     cur = conn.cursor()
     
     # needs to execute setup.sql first

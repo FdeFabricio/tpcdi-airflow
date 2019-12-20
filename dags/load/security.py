@@ -49,6 +49,7 @@ dim_security_map = {
 
 
 def load(conn):
+    logging.info("Begin DimSecurity - Historical Load")
     cur = conn.cursor()
     
     df_security = pd.DataFrame(

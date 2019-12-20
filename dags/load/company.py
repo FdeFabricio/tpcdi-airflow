@@ -1,3 +1,4 @@
+import logging
 from collections import defaultdict
 from datetime import datetime
 from glob import glob
@@ -15,6 +16,7 @@ datetime.date  # force datetime import
 
 
 def load():
+    logging.info("Begin DimCompany - Historical Load")
     status_types = {}
     with open(status_type_file_path, 'r') as f:
         for line in f:

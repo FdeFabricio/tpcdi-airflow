@@ -12,6 +12,7 @@ file_trade_history = data_folder_path + "TradeHistory.txt"
 
 
 def load(conn):
+    logging.info("Begin DimTrade - Historical Load")
     cur = conn.cursor()
     
     df_messages = pd.DataFrame(

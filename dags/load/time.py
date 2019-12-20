@@ -8,6 +8,7 @@ time_file_path = data_folder_path + "Time.txt"
 
 
 def load(conn):
+    logging.info("Begin DimTime - Historical Load")
     cur = conn.cursor()
     df = pd.read_csv(time_file_path, delimiter='|',
                      names=["SK_TimeID", "TimeValue", "HourID", "HourDesc", "MinuteID", "MinuteDesc", "SecondID",

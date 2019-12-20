@@ -1,10 +1,12 @@
+import logging
+
 from utils.utils import bulk_load
-import time
 
 file_path = 'data/Batch1/StatusType.txt'
 
 
 def load(conn):
+    logging.info("Begin StatusType - Historical Load")
     cur = conn.cursor()
     
     cur.execute("""
@@ -14,7 +16,5 @@ def load(conn):
         ST_NAME CHAR(10) NOT NULL
       );
     """)
-    
-    time.sleep(3)  # TODO only for testing - remove this in the future
     
     bulk_load(conn, 'StatusType', file_path, '|')

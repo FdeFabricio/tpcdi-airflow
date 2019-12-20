@@ -8,6 +8,7 @@ file_holdings = data_folder_path + "HoldingHistory.txt"
 
 
 def load(conn):
+    logging.info("Begin FactHoldings - Historical Load")
     cur = conn.cursor()
     
     # needs to execute setup.sql first

@@ -12,6 +12,7 @@ datetime.date  # force datetime import
 
 
 def load(conn):
+    logging.info("Begin Financial - Historical Load")
     cur = conn.cursor()
     
     finwire_schema = [

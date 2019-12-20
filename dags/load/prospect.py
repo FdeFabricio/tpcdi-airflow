@@ -10,6 +10,7 @@ NULL = ""
 
 
 def load(conn, ds):
+    logging.info("Begin Prospect - Historical Load")
     cur = conn.cursor()
     
     # needs to execute setup.sql first

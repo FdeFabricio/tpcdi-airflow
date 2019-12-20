@@ -8,6 +8,7 @@ date_file_path = data_folder_path + "Date.txt"
 
 
 def load(conn):
+    logging.info("Begin DimDate - Historical Load")
     cur = conn.cursor()
     df = pd.read_csv(date_file_path, delimiter="|",
                      names=["SK_DateID", "DateValue", "DateDesc", "CalendarYearID", "CalendarYearDesc", "CalendarQtrID",

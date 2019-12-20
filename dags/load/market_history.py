@@ -8,6 +8,7 @@ daily_market_file_path = data_folder_path + "DailyMarket.txt"
 
 
 def load(conn):
+    logging.info("Begin FactMarketHistory - Historical Load")
     cur = conn.cursor()
     
     # needs to execute setup.sql first

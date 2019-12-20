@@ -8,7 +8,7 @@ CREATE TABLE Audit (
     DValue NUMERIC(15,5)
 );
 
--------------------------------------------------------------------------
+-- -----------------------------------------------------------------------
 
 DROP TABLE IF EXISTS DimAccount;
 CREATE TABLE DimAccount(
@@ -37,7 +37,7 @@ END;
 $$
 delimiter ;
 
--------------------------------------------------------------------------
+-- -----------------------------------------------------------------------
 
 DROP TABLE IF EXISTS DimBroker;
 CREATE TABLE DimBroker  (
@@ -56,7 +56,7 @@ CREATE TABLE DimBroker  (
     EndDate DATE NOT NULL
 );
 
--------------------------------------------------------------------------
+-- -----------------------------------------------------------------------
 
 DROP TABLE IF EXISTS DimCustomer;
 CREATE TABLE DimCustomer (
@@ -95,7 +95,7 @@ CREATE TABLE DimCustomer (
     EndDate DATE NOT NULL
 );
 
--------------------------------------------------------------------------
+-- -----------------------------------------------------------------------
 
 DROP TABLE IF EXISTS DimDate;
 CREATE TABLE DimDate (
@@ -119,7 +119,7 @@ CREATE TABLE DimDate (
     HolidayFlag BOOLEAN
 );
 
--------------------------------------------------------------------------
+-- -----------------------------------------------------------------------
 
 DROP TABLE IF EXISTS DimSecurity;
 CREATE TABLE DimSecurity(
@@ -140,7 +140,7 @@ CREATE TABLE DimSecurity(
     EndDate DATE NOT NULL
 );
 
--------------------------------------------------------------------------
+-- -----------------------------------------------------------------------
 
 DROP TABLE IF EXISTS DimTime;
 CREATE TABLE DimTime (
@@ -156,7 +156,7 @@ CREATE TABLE DimTime (
     OfficeHoursFlag BOOLEAN
 );
 
--------------------------------------------------------------------------
+-- -----------------------------------------------------------------------
 
 DROP TABLE IF EXISTS DimTrade;
 CREATE TABLE DimTrade(
@@ -236,7 +236,7 @@ END;
 $$
 delimiter ;
 
--------------------------------------------------------------------------
+-- -----------------------------------------------------------------------
 
 DROP TABLE IF EXISTS DImessages;
 CREATE TABLE DImessages (
@@ -248,7 +248,7 @@ CREATE TABLE DImessages (
     MessageData CHAR(100)
 );
 
--------------------------------------------------------------------------
+-- -----------------------------------------------------------------------
 
 DROP TABLE IF EXISTS FactHoldings;
 CREATE TABLE FactHoldings (
@@ -289,7 +289,7 @@ END;
 $$
 delimiter ;
 
--------------------------------------------------------------------------
+-- -----------------------------------------------------------------------
 
 DROP TABLE IF EXISTS FactWatches;
 CREATE TABLE FactWatches (
@@ -337,7 +337,7 @@ END;
 $$
 delimiter ;
 
--------------------------------------------------------------------------
+-- -----------------------------------------------------------------------
 
 DROP TABLE IF EXISTS FactMarketHistory;
 CREATE TABLE FactMarketHistory(
@@ -426,7 +426,7 @@ END;
 $$
 delimiter ;
 
--------------------------------------------------------------------------
+-- -----------------------------------------------------------------------
 
 DROP TABLE IF EXISTS Financial;
 CREATE TABLE Financial (
@@ -473,7 +473,7 @@ END;
 $$
 delimiter ;
 
--------------------------------------------------------------------------
+-- -----------------------------------------------------------------------
 
 DROP TABLE IF EXISTS Prospect;
 CREATE TABLE Prospect(
@@ -530,7 +530,7 @@ END;
 $$
 delimiter ;
 
--------------------------------------------------------------------------
+-- -----------------------------------------------------------------------
 
 DROP TABLE IF EXISTS FactCashBalances;
 CREATE TABLE FactCashBalances ( 
